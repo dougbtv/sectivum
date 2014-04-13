@@ -1,0 +1,23 @@
+{
+  "name": "sectivum",
+  "preferGlobal": true,
+  "version": "0.0.1",
+  "author": "Doug Smith <info@laboratoryb.org>",
+  "description": "An Ethereum EVM-ASM compiler for a Perl-like Language",
+  "scripts": {
+    "start": "node ./sectivum.js"
+  },
+  "main": "./sectivum.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dougbtv/sectivum"
+  },
+  "keywords": [
+    "ethereum",
+    "compiler",
+    "programming ",
+  ],
+  "dependencies" : {
+      "restify"     :  "*",
+  }
+}
