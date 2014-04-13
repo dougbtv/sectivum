@@ -15,9 +15,10 @@
   "keywords": [
     "ethereum",
     "compiler",
-    "programming ",
+    "programming "
   ],
   "dependencies" : {
       "restify"     :  "*",
+      "prettyjson" : "*"
   }
 }

@@ -18,7 +18,7 @@ define('DEBUG',false);
 // ---------------------------------- Utility methods.
 
 
-// I really would have a boolean rather than a -1 for false.
+// I really would rather have a boolean rather than a -1 for false.
 // So I was inspired by: http://stackoverflow.com/questions/11286979/how-to-search-in-an-array-in-node-js-in-a-non-blocking-way
 
 Array.prototype.contains = function(needle) {
@@ -47,7 +47,8 @@ String.prototype.first = function() {
 
 // And a nickname for test. I like "match"
 RegExp.prototype.match = function(needle) {
-    return this.test(needle);
+
+	return this.test(needle);
 }
 
 // Array clone:

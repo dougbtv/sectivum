@@ -1,8 +1,26 @@
+def foo(bar):
+    bar = bar - 10
+    return bar
+
+b = 1
+a = foo(b)
+
+==============
 if 1 < 0:
     b = 8
     stop
 elif 2 > 3:
     a = 10
+
+while b < 10:
+    b = b + 1
+    if b == 10:
+        b = b * 100
+    foo(b)
+
+def foo(b):
+    bar = b * 10
+    return bar
 ==============
 if 1 == 0:
     contract.storage[100] = 100

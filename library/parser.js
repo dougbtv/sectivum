@@ -1,24 +1,27 @@
 module.exports = function() {
 
-    // this.last_error = '';
-    var precedence = new Object(); 
-	precedence['^']  = 1;
-	precedence['*']  = 2;
-	precedence['/']  = 3;
-	precedence['%']  = 4;
-	precedence['#/'] = 2;
-	precedence['#%'] = 2;
-	precedence['+']  = 3;
-	precedence['-']  = 3;
-	precedence['<']  = 4;
-	precedence['<='] = 4;
-	precedence['>']  = 4;
-	precedence['>='] = 4;
-	precedence['=='] = 5;
-	precedence['and'] = 6;
-	precedence['&&'] = 6;
-	precedence['or'] = 7;
-	precedence['||'] = 7;
+	var prettyjson = require('prettyjson');
+
+	// Here we turn token types into an abstract syntax tree.
+	var precedence = {
+		'^': 1,
+		'*': 2,
+		'/': 3,
+		'%': 4,
+		'#/': 2,
+		'#%': 2,
+		'+': 3,
+		'-': 3,
+		'<': 4,
+		'<=': 4,
+		'>': 4,
+		'>=': 4,
+		'==': 5,
+		'and': 6,
+		'&&': 6,
+		'or': 7,
+		'||': 7,
+	};
 
     // Include the filesystem module.
 	this.fs = require('fs');
@@ -73,11 +76,9 @@ module.exports = function() {
 		
 		this.ast = this.parseLines(applines);
 
-		console.log("AST: ", this.ast);
+		console.log("AST: %j", this.ast);
 
-		throw "fucking a, looping here?";
-
-		
+		// console.log(prettyjson.render(this.ast));
 
 	}
 
@@ -144,17 +145,8 @@ module.exports = function() {
 			// ...important parse the line itself.
 			var out = this.parseSingleLine(main);
 			// console.log("!trace parse single result: ", out);
-			// out = ['if', 'foo'];
 
-			/*
-			console.log("===----->===----->===----->===----->===----->===----- detent -> ", this.madlimit);
-
-			this.madlimit++;
-			if (this.madlimit >= 8) {
-				throw "!tracer mad limit"
-			}
-			*/
-
+			
 			// Include the child block into the parsed expression
 			block_statements = ['if', 'else', 'while', 'else if','def'];
 
@@ -246,7 +238,7 @@ module.exports = function() {
 
 		re_alphanum = /[a-zA-Z0-9\.]/;
 		re_space = /[\s]/;
-		re_brack = /\(\)\[\]/;
+		re_brack = /[\(\)\[\]]/;
 		re_dquote = /"/;
 		re_squote = /'/;
 
@@ -283,9 +275,7 @@ module.exports = function() {
 
 	    function nxt() {
 
-	    	// console.log("!trace current token:", current_token);
-
-	        if (current_token.length >= 2 && current_token.last() == '-') {
+	    	if (current_token.length >= 2 && current_token.last() == '-') {
 
 	        	token_as_array = current_token.split("");
 
@@ -306,12 +296,10 @@ module.exports = function() {
 	    }
 	    
 	    // Main loop
-	    // console.log("!trace whole line: " + line);
-
+	    
 	    while (i < line.length) {
 
 	        c = this.charType(line.charAt(i));
-	        // console.log("!trace chartype: " + c + " for '" + line.charAt(i) + "'");
 	        
 	        // Inside a string
 	        if (tp == 'squote' || tp == "dquote") {
@@ -352,7 +340,7 @@ module.exports = function() {
 
 	            current_token += line.charAt(i);
 	            tp = c;
-	            i += 1;
+	            i++;
 
 	        }
 	        
@@ -360,17 +348,14 @@ module.exports = function() {
 
 	    nxt();
 
-	    // console.log("!trace, last o:"+o.last());
-
 	    if ([':',':\n','\n'].contains(o.last())) {
 	    	o.pop();
 	    }
-	    
+
 	    if (['squote','dquote'].contains(tp)) {
 	    	throw "Unclosed string: " + line;
 		}
 	    
-	    // console.log("!trace, 1: ", o);
 	    return o;
 		
 
@@ -421,27 +406,22 @@ module.exports = function() {
 
 		var tokentyper = this.tokenType;
 
-		// console.log("!trace iq: ", iq);
-		// console.log("!trace tokens: ", tokens);
-
-	    // The normal Shunting-Yard algorithm simply converts expressions into
+		// The normal Shunting-Yard algorithm simply converts expressions into
 	    // reverse polish notation. Here, we try to be slightly more ambitious
 	    // and build up the AST directly on the output queue
 	    // eg. say oq = [ 2, 5, 3 ] and we add "+" then "*"
 	    // we get first [ 2, [ +, 5, 3 ] ] then [ *, 2, [ +, 5, 3 ] ]
 	    
-	    function popstack(stack,oq) {
+	    function popstack(stack,oq,parent) {
 
 	        tok = stack.pop();
 	        typ = tokentyper(tok);
 
 	        if (typ == 'op') {
 
-	            b = oq.pop();
 	            a = oq.pop();
+	            b = oq.pop();
 	            oq.push([ tok, b, a]);
-
-	            // console.log("!trace popstack oq: ", oq);
 
 	        } else if (typ == 'monop') {
 
@@ -450,10 +430,10 @@ module.exports = function() {
 
 	        } else if (typ == 'rparen') {
 	            
-	            args = [];
+	            var args = [];
 	            
-	            while (tokentyper(oq.last()) != 'lparen') {
-	            	args.unshift(0,oq.pop());
+	            while(parent.tokenType(oq.last()) != 'lparen') {
+	            	args.unshift(oq.pop());
 	            }
 
 	            oq.pop();
@@ -462,7 +442,12 @@ module.exports = function() {
 	                oq.push(['access'] + args);
 
 	            } else if (tok == ')' && args.length > 0 && args[0] != 'id') {
-	                oq.push(['fun'] + args);
+	            	var pusher = ['fun'];
+	            	for (var a = 0; a < args.length; a++) {
+	            		pusher.push(args[a]);
+	            	}
+	            	
+	                oq.push(pusher);
 
 	            } else {
 	                oq.push(args[1]);
@@ -476,8 +461,11 @@ module.exports = function() {
 	    // The main loop
 	    while (iq.length > 0) {
 
+	    	// This is -really- handy btw.
+	    	// console.log("!trace inqueue destack while: ", stack, iq, oq);
+
 	        prev = tok;
-	        tok = iq.pop(0);
+	        tok = iq.shift();
 	        typ = this.tokenType(tok);
 
 	        if (typ == 'alphanum') {
@@ -485,7 +473,7 @@ module.exports = function() {
 
 	        } else if (typ == 'lparen') {
 	            
-	            if (toktype(prev) != 'alphanum') { 
+	            if (this.tokenType(prev) != 'alphanum') { 
 	            	oq.push('id');
 	            }
 
@@ -496,8 +484,8 @@ module.exports = function() {
 
 	        } else if (typ == 'rparen') {
 
-	            while (stack.length && this.tokenType(stack.last()) != 'lparen') {
-	                popstack(stack,oq);
+	        	while (stack.length && this.tokenType(stack.last()) != 'lparen') {
+	        		popstack(stack,oq,this);
 	            }
 
 	            if (stack.length) {
@@ -505,7 +493,7 @@ module.exports = function() {
 	            }
 
 	            stack.push(tok);
-	            popstack(stack,oq);
+	            popstack(stack,oq,this);
 
 	        } else if (typ == 'monop' || typ == 'op') {
 
@@ -516,7 +504,7 @@ module.exports = function() {
 	            prec = precedence[tok];
 
 	            while (stack.length && this.tokenType(stack.last()) == 'op' && precedence[stack.last()] < prec) {
-	                popstack(stack,oq);
+	            	popstack(stack,oq,this);
 	            }
 
 	            stack.push(tok);
@@ -524,7 +512,7 @@ module.exports = function() {
 	        } else if (typ == 'comma') {
 
 	            while (stack.length && stack.last() != 'lparen') {
-	            	popstack(stack,oq);
+	            	popstack(stack,oq,this);
 	            }
 
 		    }
@@ -533,10 +521,8 @@ module.exports = function() {
 		}
 
 	    while (stack.length) {
-	        popstack(stack,oq);
+	        popstack(stack,oq,this);
 	    }
-
-	    // console.log("!trace oq: ", oq);
 
 	    if (oq.length == 1) {
 	        return oq[0];
@@ -623,12 +609,9 @@ module.exports = function() {
 		re_function = /^\s*[^\s]+\(.*\)$/;
 
 		tokens = this.tokenize(line.trim());
-		// console.log("!trace token in parse line: ", tokens);
-
+		
 		if (tokens[0] == 'if' || tokens[0] == 'while' || tokens[0] == 'def') {
-	        
-	        returner = [ tokens[0], this.shuntingYard(tokens.slice(1,tokens.length)) ];
-	        return returner;
+	        return [ tokens[0], this.shuntingYard(tokens.slice(1,tokens.length)) ];
 
 	    } else if (tokens.length >= 2 && tokens[0] == 'else' && tokens[1] == 'if') {
 	        return [ 'else if', this.shuntingYard(tokens.slice(2,tokens.length)) ];
@@ -647,7 +630,7 @@ module.exports = function() {
 
 	    } else if (re_function.match(line)) {
 	        // Thats a bare function call.
-	        return shunting_yard(tokens);
+	        return this.shuntingYard(tokens);
 
 	    } else {
 
@@ -670,7 +653,7 @@ module.exports = function() {
 	        }
 
 	        if (pre == 1) {
-	            return [ 'set', this.shuntingYard(tokens.slice(0,eqplace)), this.shuntingYard(tokens.slice(eqplace+1,tokens.length)) ];
+				return [ 'set', this.shuntingYard(tokens.slice(0,eqplace)), this.shuntingYard(tokens.slice(eqplace+1,tokens.length))];
 	        } else {
 	            return [ 'mset', this.shuntingYard(tokens.slice(0,eqplace)), this.shuntingYard(tokens.slice(eqplace+1,tokens.length)) ];
 	        }
