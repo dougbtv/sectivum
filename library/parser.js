@@ -215,8 +215,8 @@ module.exports = function() {
 	            	u = u.last();
 	            }
 
-	            u.push(['else'])
-	            u.push([out[1]]);
+	            u.push(['else',out[1]]);
+	            // u.push([out[1]]);
 
 	        } else {
 	            // Normal case: just add the parsed line to the output
