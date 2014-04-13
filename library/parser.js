@@ -1,5 +1,20 @@
+// ---------------------------------------------------------------------- -
+//                                      __   __                       
+//  .-----.---.-.----.-----.-----.----.|  |_|__|.--.--.--.--.--------.
+//  |  _  |  _  |   _|__ --|  -__|  __||   _|  ||  |  |  |  |        |
+//  |   __|___._|__| |_____|_____|____||____|__| \___/|_____|__|__|__|
+//  |__|                                                              
+//
+// ---------------------------------------------------------------------- -
+// Parsectivum. The sectivum parser.
+// Inspired by ethereum/compiler by Vitalik Buterin
+// Originally compiles CLL.
+// Ported and extended by Doug Smith, April 2014.
+// ---------------------------------------------------------------------- -
+
 module.exports = function() {
 
+	// For some pretty output during debugging.
 	var prettyjson = require('prettyjson');
 
 	// Here we turn token types into an abstract syntax tree.
@@ -29,12 +44,9 @@ module.exports = function() {
 	// Debug for infinite loop
 	this.madlimit = 0;
 
-	// Out abstract syntax tree.
+	// Our abstract syntax tree.
 	this.ast = [];
 	
-	// Set up our current token for the tokenizer (needs this as a shared property)
-	// current_token = null;
-
 	// ---------------------------------------------------------
 	// -- loadFile : Load up a file for parsing.
 
@@ -69,14 +81,14 @@ module.exports = function() {
 
 		console.log(applines);
 
-		console.log("\n\n\n");
+		console.log("\n\n");
 
 		// Ok, now let's parse the lines
 
 		
 		this.ast = this.parseLines(applines);
 
-		console.log("AST: %j", this.ast);
+		console.log("AST: %j", this.ast, "\n\n");
 
 		// console.log(prettyjson.render(this.ast));
 
