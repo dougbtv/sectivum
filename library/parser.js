@@ -416,8 +416,6 @@ module.exports = function() {
 		var prev = null;
 		var tok = null;
 
-		var tokentyper = this.tokenType;
-
 		// The normal Shunting-Yard algorithm simply converts expressions into
 	    // reverse polish notation. Here, we try to be slightly more ambitious
 	    // and build up the AST directly on the output queue
@@ -426,18 +424,18 @@ module.exports = function() {
 	    
 	    function popstack(stack,oq,parent) {
 
-	        tok = stack.pop();
-	        typ = tokentyper(tok);
+	        var tok = stack.pop();
+	        var typ = parent.tokenType(tok);
 
 	        if (typ == 'op') {
 
-	            a = oq.pop();
-	            b = oq.pop();
+	            var a = oq.pop();
+	            var b = oq.pop();
 	            oq.push([ tok, b, a]);
 
 	        } else if (typ == 'monop') {
 
-	            a = oq.pop();
+	            var a = oq.pop();
 	            oq.push([ tok, a ]);
 
 	        } else if (typ == 'rparen') {
@@ -511,7 +509,7 @@ module.exports = function() {
 	            }
 
 	            stack.push(tok);
-	            popstack(stack,oq,this);
+				popstack(stack,oq,this);
 
 	        } else if (typ == 'monop' || typ == 'op') {
 
@@ -580,13 +578,13 @@ module.exports = function() {
 
 	    } else {
 
-	        eqplace = tokens.indexOf('=');
-	        pre = 0;
-	        i = 0;
+	    	var eqplace = tokens.indexOf('=');
+	        var pre = 0;
+	        var i = 0;
 
 	        while (i < eqplace) {
 
-	        	commaidx = tokens.slice(i,tokens.length).indexOf(',');
+	        	var commaidx = tokens.slice(i,tokens.length).indexOf(',');
 	        	
 	        	if (commaidx > -1) {
 	        		nextcomma = i + commaidx;
@@ -599,7 +597,9 @@ module.exports = function() {
 	        }
 
 	        if (pre == 1) {
-				return [ 'set', this.shuntingYard(tokens.slice(0,eqplace)), this.shuntingYard(tokens.slice(eqplace+1,tokens.length))];
+	        	positionb = this.shuntingYard(tokens.slice(eqplace+1,tokens.length))
+				positiona = this.shuntingYard(tokens.slice(0,eqplace))
+				return [ 'set', positiona, positionb];
 	        } else {
 	            return [ 'mset', this.shuntingYard(tokens.slice(0,eqplace)), this.shuntingYard(tokens.slice(eqplace+1,tokens.length)) ];
 	        }
