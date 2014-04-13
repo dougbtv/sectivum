@@ -451,7 +451,13 @@ module.exports = function() {
 	            oq.pop();
 	            
 	            if (tok == ']') {
-	                oq.push(['access'] + args);
+
+					var pusher = ['access'];
+					for (var a = 0; a < args.length; a++) {
+						pusher.push(args[a]);
+					}
+
+					oq.push(pusher);
 
 	            } else if (tok == ')' && args.length > 0 && args[0] != 'id') {
 	            	var pusher = ['fun'];
