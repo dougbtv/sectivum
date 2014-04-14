@@ -129,14 +129,15 @@ module.exports = function() {
 	        } else if (re_ref.match(expr)) {
 	            return [expr];
 	        
-	        } else if (this.varhash[expr]) {
+	        } else if (typeof this.varhash[expr] != 'undefined') {
 	            return ['PUSH',this.varhash[expr],'MLOAD'];
 	        
 	        } else if (pseudovars[expr]) {
 	            return [pseudovars[expr]];
 	        
 	        } else {
-	            this.varhash[expr] = this.varhash.hashlength();
+				var hashlen = this.varhash.hashlength();
+	            this.varhash[expr] = hashlen;
 	            return ['PUSH',this.varhash[expr],'MLOAD'];
 	        }
 	    
@@ -287,16 +288,16 @@ module.exports = function() {
 	        if (re_expr.match(expr)) {
 	            throw "Can't set the value of a number! "+expr;
 
-	        } else if (this.varhash[expr]) {
+	        } else if (typeof this.varhash[expr] != 'undefined') {
 
 	        	// !bang warning: general array warning
-	            return ['PUSH',this.varhash[expr]];
+				return ['PUSH',this.varhash[expr]];
 	        
 	        } else {
 	        
 	        	this.varhash[expr] = this.varhash.hashlength();
-	            return ['PUSH',this.varhash[expr]];
-	        
+	        	return ['PUSH',this.varhash[expr]];
+
 	        }
 	    
 	    } else if (typ == 'storage') {

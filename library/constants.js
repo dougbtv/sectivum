@@ -58,6 +58,7 @@ Array.prototype.clone = function() {
 };
 
 Object.prototype.hashlength = function() {
-	return Object.keys(this).length;
+	hashlen = Object.keys(this).length
+	return hashlen;
 }
 
