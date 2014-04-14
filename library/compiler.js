@@ -150,7 +150,7 @@ module.exports = function() {
 	        var g = this.compile_expr(expr[2]);
 
 	        // !bang warning: array addition
-	        return g + f + [optable[expr[0]]];
+	        return g.concat(f,[optable[expr[0]]]);
 	    
 	    } else if (expr[0] == 'fun' && expr[1] in funtable) {
 	    
@@ -175,15 +175,15 @@ module.exports = function() {
 	    
 	        if (expr[1][0] == 'block.contract_storage') {
 	        	// !bang warning: array addition
-			    return compile_expr(expr[2]) + compile_expr(expr[1][1]) + ['EXTRO'];
+			    return compile_expr(expr[2]).concat(compile_expr(expr[1][1]),['EXTRO']);
 	        
 	        } else if (expr[1] in pseudoarrays) {
 	        	// !bang warning: array addition
-	            return compile_expr(expr[2]) + [pseudoarrays[expr[1]]];
+	            return compile_expr(expr[2]).concat([pseudoarrays[expr[1]]]);
 	        
 	        } else {
 	        	// !bang warning: array addition
-	            return compile_left_expr(expr[1]) + compile_expr(expr[2]) + ['ADD','MLOAD'];
+	            return compile_left_expr(expr[1]).concat(compile_expr(expr[2]),['ADD','MLOAD']);
 
 	        }
 	    
@@ -235,19 +235,19 @@ module.exports = function() {
 	        
 	        // Steps: Set function return variable, Set parameters, Go to the function, Set the label
 	        // !bang warning: array addition
-	        return stmt_functionreturn + params + [ functionhash[expr[1]]['funcref'], 'JMP' ] + [ label ];
+	        return stmt_functionreturn.concat(params,[ functionhash[expr[1]]['funcref'], 'JMP' ],[ label ]);
 	    
 	    } else if (expr[0] == '!') {
 	    
 	        var f = this.compile_expr(expr[1]);
 	        // !bang warning: array addition
 	        // !fix1
-	        return f.push('NOT');
+	        return f.concat(['NOT']);
 	    
 	    } else if (expr[0] in pseudoarrays) {
 	    
 	    	// !bang warning: array addition
-	        return this.compile_expr(expr[1]) + pseudoarrays[expr[0]];
+	        return this.compile_expr(expr[1]).concat(pseudoarrays[expr[0]]);
 	    
 	    } else if (expr[0] in ['or', '||']) {
 	    
@@ -294,13 +294,7 @@ module.exports = function() {
 	        
 	        } else {
 	        
-	        	// console.log("!trace GOT THAT, expr: ",expr);
-	        	// But I think this.varhash has to be global.
-
-	        	// console.log("!trace expr: %j", expr);
-	        	// console.log("!trace varhash len: ", this.varhash.hashlength());
-	            this.varhash[expr] = this.varhash.hashlength();
-	            // console.log("!trace varhash resulted in: %j", this.varhash);
+	        	this.varhash[expr] = this.varhash.hashlength();
 	            return ['PUSH',this.varhash[expr]];
 	        
 	        }
@@ -313,10 +307,10 @@ module.exports = function() {
 	    
 	        if (this.get_left_expr_type(expr[1]) == 'storage') {
 	        	// !bang warning: array addition
-	            return this.compile_left_expr(expr[1]) + ['SLOAD'] + this.compile_expr(expr[2]);
+	            return this.compile_left_expr(expr[1]).concat(['SLOAD'],this.compile_expr(expr[2]));
 	        } else {
 	        	// !bang warning: array addition
-	            return this.compile_left_expr(expr[1]) + this.compile_expr(expr[2]) + ['ADD'];
+	            return this.compile_left_expr(expr[1]).concat(this.compile_expr(expr[2]),['ADD']);
 	        }
 	    
 	    } else {
@@ -348,9 +342,10 @@ module.exports = function() {
 	        // Typically we use the second index, which is the condition for the if
 	        var stmtindex = 2;
 	        // However, with else, our condition isn't explicit.
+	        
 	        if (stmt[0] == "else") {
 
-	            // So we use a previous index in this statement
+	        	// So we use a previous index in this statement
 	            stmtindex = 1;
 	            // Set that we know the endif exists, at this label.
 	            this.endifmarker[0] = this.labelcollection[0];
@@ -360,49 +355,53 @@ module.exports = function() {
 
 	            // Additionally we compile expressions only for conditionals.
 	            var f = this.compile_expr(stmt[1]);
-		        var g = this.compile_stmt(stmt[stmtindex]);
-		        
-		        var h;
+	        }
 
-		        if (stmt.length > 3) {
-		        	h = this.compile_stmt(stmt[3])
-		        } else {
-		        	h = null;
-		        }
+	        var g = this.compile_stmt(stmt[stmtindex]);
+	        
+	        var h;
 
-		        var label = 'LABEL_' + this.labelcollection[0]; 
-		        var ref = 'REF_'+this.labelcollection[0];
-		        
-		        // We hold the lc's place, as if the end if location is unknown this "could be end if"
-		        var couldbeendif = this.labelcollection[0];
-		        this.labelcollection[0] += 1;
+	        if (stmt.length > 3) {
+	        	h = this.compile_stmt(stmt[3]);
+	        } else {
+	        	h = null;
+	        }
 
-		        if (stmt[0] == "else") {
-		        	// !bang warning: array addition.
-		        	return g + [ label ];
-		        } else {
-		            
-		            if (!this.endifknown[0]) {
-		                // If our endif is unknown, we mark it here
-		                this.endifmarker[0] = couldbeendif;
-		                this.endifknown[0] = 1;
-		            }
+	        var label = 'LABEL_' + this.labelcollection[0]; 
+	        var ref = 'REF_' + this.labelcollection[0];
+	        
+	        // We hold the lc's place, as if the end if location is unknown this "could be end if"
+	        var couldbeendif = this.labelcollection[0];
+	        this.labelcollection[0] += 1;
 
-		            // An if denotes the beginning of a if/elif/else block, reset our known endif
-		        	if (stmt[0] == "if") { 
-		        		this.endifknown[0] = 0; 
-		        	}
+	        if (stmt[0] == "else") {
+	        	
+	        	// !bang warning: array addition.
+	        	return g.concat([label]);
 
-		            if (h) {
-		            	// !bang warning: array addition.
-		            	return f + [ 'NOT', ref, 'SWAP', 'JMPI' ] + g + [ 'REF_' + this.endifmarker[0], 'JMP' ] + [ label ] + h
-		            } else {
-		            	// !bang warning: array addition.
-		            	return f + [ 'NOT', ref, 'SWAP', 'JMPI' ] + g + [ label ]
-		        	}
+	        } else {
+	            
+	            if (!this.endifknown[0]) {
+	                // If our endif is unknown, we mark it here
+	                this.endifmarker[0] = couldbeendif;
+	                this.endifknown[0] = 1;
+	            }
 
-		        }
-		    }
+	            // An if denotes the beginning of a if/elif/else block, reset our known endif
+	        	if (stmt[0] == "if") { 
+	        		this.endifknown[0] = 0; 
+	        	}
+
+	            if (h) {
+	            	// !bang warning: array addition.
+	            	return f.concat( [ 'NOT', ref, 'SWAP', 'JMPI' ] , g , [ 'REF_' + this.endifmarker[0], 'JMP' ] , [ label ] , h );
+	            } else {
+	            	// !bang warning: array addition.
+	            	return f.concat( [ 'NOT', ref, 'SWAP', 'JMPI' ] , g , [ label ] );
+	        	}
+
+	        }
+	    
 
 	    } else if (stmt[0] == "def") {
 
@@ -447,7 +446,7 @@ module.exports = function() {
 	        }
 	        
 	        // !bang warning: array addition.
-	        return [ ref, 'JMP', insidelabel ] + f + [ 'PUSH', this.varhash[funcname + '_returnpoint'], 'MLOAD', 'JMP'] + [ label ];
+	        return [ ref, 'JMP', insidelabel ].concat(f , [ 'PUSH', this.varhash[funcname + '_returnpoint'], 'MLOAD', 'JMP'] , [ label ] );
 
 	    } else if (stmt[0] == 'while') {
 
@@ -463,19 +462,13 @@ module.exports = function() {
 	        this.labelcollection[0] += 2;
 
 	        // !bang warning: array addition.
-	        return [ beglab ] + f + [ 'NOT', endref, 'SWAP', 'JMPI' ] + g + [ begref, 'JMP', endlab ];
+	        return [ beglab ].concat(f , [ 'NOT', endref, 'SWAP', 'JMPI' ] , g , [ begref, 'JMP', endlab ] );
 
 	    } else if (stmt[0] == 'set') {
 
-	    	// console.log("!trace this.varhash: %j",this.varhash);
-
-	        var lexp = this.compile_left_expr(stmt[1]);
+	    	var lexp = this.compile_left_expr(stmt[1]);
 	        var rexp = this.compile_expr(stmt[2]);
 	        var lt = this.get_left_expr_type(stmt[1]);
-
-	        // console.log("!trace lexp: ", lexp);
-	        // console.log("!trace rexp: ", rexp);
-	        // console.log("!trace lt: ", lt);
 
 	        // !bang warning: array addition.
 	        var verb = 'MSTORE';
@@ -484,7 +477,7 @@ module.exports = function() {
 	        }
 
 	        // !fix1
-	        return [rexp,lexp,verb];
+	        return rexp.concat(lexp,verb);
 
 	    } else if (stmt[0] == 'mset') {
 
@@ -510,14 +503,14 @@ module.exports = function() {
 	            //   o += this.compile_left_expr(e,this.varhash)
 	            //   o += [ 'SSTORE' if get_left_expr_type(e) == 'storage' else 'MSTORE' ]
 
-	            o.push(this.compile_left_expr(e));
+	            o.concat(this.compile_left_expr(e));
 
 	            var verb = 'SSTORE';
 	            if (this.get_left_expr_type(e) == 'storage') {
 	            	verb = 'MSTORE';
 	            };
 
-	            o.push(verb);
+	            o.concat([verb]);
 
 	        }
 
@@ -530,10 +523,12 @@ module.exports = function() {
 	        var stmtslice = stmt.slice(1,stmt.length);
 
 			for (var stmtindex = 0; stmtindex < stmtslice.length; stmtindex++) {
-	        	// for s in stmt[1:]:
-	        	// !bang warning: array addition.
+				
+				// !bang warning: array addition.
 	        	var s = stmtslice[stmtindex];
-	            o.push(this.compile_stmt(s));
+	        	var slicecompiled = this.compile_stmt(s);
+	        	o = o.concat(slicecompiled);
+
 	        }
 
 	        return o;
@@ -546,7 +541,7 @@ module.exports = function() {
 	        var datastart = this.compile_expr(stmt[5]);
 
 	        // !bang warning: array addition.
-	        return datastart + datan + value + to + [ 'MKTX' ];
+	        return datastart.concat(datan,value,to,[ 'MKTX' ]);
 
 	    } else if (stmt[0] == 'fun' && stmt[1] in functionhash) {
 
@@ -561,7 +556,7 @@ module.exports = function() {
 	    } else if (stmt[0] == 'fun' && stmt[1] == 'suicide') {
 
 	    	// !bang warning: array addition.
-	        return this.compile_expr(stmt[2]) + [ 'SUICIDE' ];
+	        return this.compile_expr(stmt[2]).concat([ 'SUICIDE' ]);
 
 	    } else if (stmt[0] == 'return') {
 

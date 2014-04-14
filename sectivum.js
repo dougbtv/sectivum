@@ -21,7 +21,11 @@ parser.loadFile('example.cll');
 
 compile_result = compiler.compile_stmt(parser.ast)
 
-console.log("!trace compile result! %j",compile_result);
+console.log("!trace compile result! %j \n\n",compile_result);
+
+// For some pretty output during debugging.
+// var prettyjson = require('prettyjson');
+// console.log(prettyjson.render(compile_result));
 
 throw "!trace good work. next is assemble";
 
