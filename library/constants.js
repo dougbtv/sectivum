@@ -30,7 +30,9 @@ Array.prototype.contains = function(needle) {
 }
 
 // ...same for strings
-String.prototype.contains = function(it) { return this.indexOf(it) != -1; };
+String.prototype.contains = function(it) { 
+	return this.indexOf(it) != -1; 
+};
 
 // last item in Array
 Array.prototype.last = function() {
@@ -62,3 +64,15 @@ Object.prototype.hashlength = function() {
 	return hashlen;
 }
 
+Object.prototype.contains = function() {
+	hashlen = Object.keys(this).length
+	return hashlen;
+}
+
+Object.prototype.isset = function(property) {
+	if (typeof this.property === 'undefined') {
+		return false;
+	} else {
+		return true;
+	}
+}

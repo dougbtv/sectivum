@@ -48,7 +48,12 @@ module.exports = function() {
 	    'block.address_balance': 'BALANCE',
 	};
 
-	// !banger
+	// Our collection of properties which are used within multiple methods.
+	// varhash : a description of the variables which have been indexed
+	// functionhash : all known code-defined functions
+	// endifmarker : notes the points at ends of if statements
+	// endifknown : remembers if knows an end if marker within a particular block
+
 	this.varhash = {};
 	this.functionhash = {};
 	this.labelcollection = [0];
@@ -115,12 +120,8 @@ module.exports = function() {
 	// Right-hand-side expressions (ie. the normal kind)
 	this.compile_expr = function(expr) {
 
-		// def compile_expr(expr,this.varhash,functionhash={},lc=[0]):
-		// !banger
 		if (typeof expr === 'string') {
 	    
-	    	// !bang warning: general array in this area.
-
 	    	re_expr = /^[0-9\-]*$/;
 	    	re_ref = /^REF_/;
 	        if (re_expr.match(expr)) {
@@ -129,7 +130,7 @@ module.exports = function() {
 	        } else if (re_ref.match(expr)) {
 	            return [expr];
 	        
-	        } else if (typeof this.varhash[expr] != 'undefined') {
+	        } else if (this.varhash.isset(expr)) {
 	            return ['PUSH',this.varhash[expr],'MLOAD'];
 	        
 	        } else if (pseudovars[expr]) {
@@ -150,7 +151,6 @@ module.exports = function() {
 	        var f = this.compile_expr(expr[1]);
 	        var g = this.compile_expr(expr[2]);
 
-	        // !bang warning: array addition
 	        return g.concat(f,[optable[expr[0]]]);
 	    
 	    } else if (expr[0] == 'fun' && expr[1] in funtable) {
@@ -175,16 +175,13 @@ module.exports = function() {
 	    } else if (expr[0] == 'access') {
 	    
 	        if (expr[1][0] == 'block.contract_storage') {
-	        	// !bang warning: array addition
-			    return compile_expr(expr[2]).concat(compile_expr(expr[1][1]),['EXTRO']);
+	        	return compile_expr(expr[2]).concat(compile_expr(expr[1][1]),['EXTRO']);
 	        
 	        } else if (expr[1] in pseudoarrays) {
-	        	// !bang warning: array addition
-	            return compile_expr(expr[2]).concat([pseudoarrays[expr[1]]]);
+	        	return compile_expr(expr[2]).concat([pseudoarrays[expr[1]]]);
 	        
 	        } else {
-	        	// !bang warning: array addition
-	            return compile_left_expr(expr[1]).concat(compile_expr(expr[2]),['ADD','MLOAD']);
+	        	return compile_left_expr(expr[1]).concat(compile_expr(expr[2]),['ADD','MLOAD']);
 
 	        }
 	    
@@ -235,29 +232,25 @@ module.exports = function() {
 	        }
 	        
 	        // Steps: Set function return variable, Set parameters, Go to the function, Set the label
-	        // !bang warning: array addition
 	        return stmt_functionreturn.concat(params,[ functionhash[expr[1]]['funcref'], 'JMP' ],[ label ]);
 	    
 	    } else if (expr[0] == '!') {
 	    
 	        var f = this.compile_expr(expr[1]);
-	        // !bang warning: array addition
-	        // !fix1
 	        return f.concat(['NOT']);
 	    
 	    } else if (expr[0] in pseudoarrays) {
 	    
-	    	// !bang warning: array addition
-	        return this.compile_expr(expr[1]).concat(pseudoarrays[expr[0]]);
+	    	return this.compile_expr(expr[1]).concat(pseudoarrays[expr[0]]);
 	    
 	    } else if (expr[0] in ['or', '||']) {
 	    
-	    	// !bang warning... maybe not a warning.
+	    	// !untested
 	        return this.compile_expr(['!', [ '*', ['!', expr[1] ], ['!', expr[2] ] ] ]);
 	    
 	    } else if (expr[0] in ['and', '&&']) {
 	    
-	    	// !bang ... maybe not a warning.
+	    	// !untested
 	        return this.compile_expr(['!', [ '+', ['!', expr[1] ], ['!', expr[2] ] ] ]);
 	    
 	    } else if (expr[0] == 'multi') {
@@ -288,10 +281,9 @@ module.exports = function() {
 	        if (re_expr.match(expr)) {
 	            throw "Can't set the value of a number! "+expr;
 
-	        } else if (typeof this.varhash[expr] != 'undefined') {
+	        } else if (this.varhash.isset(expr)) {
 
-	        	// !bang warning: general array warning
-				return ['PUSH',this.varhash[expr]];
+	        	return ['PUSH',this.varhash[expr]];
 	        
 	        } else {
 	        
@@ -307,11 +299,9 @@ module.exports = function() {
 	    } else if (typ == 'access') {
 	    
 	        if (this.get_left_expr_type(expr[1]) == 'storage') {
-	        	// !bang warning: array addition
-	            return this.compile_left_expr(expr[1]).concat(['SLOAD'],this.compile_expr(expr[2]));
+	        	return this.compile_left_expr(expr[1]).concat(['SLOAD'],this.compile_expr(expr[2]));
 	        } else {
-	        	// !bang warning: array addition
-	            return this.compile_left_expr(expr[1]).concat(this.compile_expr(expr[2]),['ADD']);
+	        	return this.compile_left_expr(expr[1]).concat(this.compile_expr(expr[2]),['ADD']);
 	        }
 	    
 	    } else {
@@ -323,22 +313,19 @@ module.exports = function() {
 	this.compile_stmt = function(stmt) {
 
 		/* !trace
-		console.log("stmt: %j ", stmt);
-		console.log("this.varhash: %j ", this.varhash);
-		console.log("functionhash: %j ", functionhash);
-		console.log("lc: %j ", lc);
-		console.log("this.endifmarker: %j ", this.endifmarker);
-		console.log("this.endifknown: %j ", this.endifknown);
 
-		console.log("statement! %j", stmt);
+			// handy ole debug methods.
+			console.log("stmt: %j ", stmt);
+			console.log("this.varhash: %j ", this.varhash);
+			console.log("functionhash: %j ", functionhash);
+			console.log("lc: %j ", lc);
+			console.log("this.endifmarker: %j ", this.endifmarker);
+			console.log("this.endifknown: %j ", this.endifknown);
+			console.log("statement! %j", stmt);
 		*/
 		
-		// throw "!trace death";
 
-
-
-		// def compile_stmt(stmt,this.varhash={},functionhash={},lc=[0],this.endifmarker=[0],this.endifknown=[0]):
-	    if (['if', 'elif', 'else'].contains(stmt[0])) {
+		if (['if', 'elif', 'else'].contains(stmt[0])) {
 
 	        // Typically we use the second index, which is the condition for the if
 	        var stmtindex = 2;
@@ -377,7 +364,6 @@ module.exports = function() {
 
 	        if (stmt[0] == "else") {
 	        	
-	        	// !bang warning: array addition.
 	        	return g.concat([label]);
 
 	        } else {
@@ -394,10 +380,8 @@ module.exports = function() {
 	        	}
 
 	            if (h) {
-	            	// !bang warning: array addition.
 	            	return f.concat( [ 'NOT', ref, 'SWAP', 'JMPI' ] , g , [ 'REF_' + this.endifmarker[0], 'JMP' ] , [ label ] , h );
 	            } else {
-	            	// !bang warning: array addition.
 	            	return f.concat( [ 'NOT', ref, 'SWAP', 'JMPI' ] , g , [ label ] );
 	        	}
 
@@ -446,7 +430,6 @@ module.exports = function() {
 	            functionhash[funcname]['params'].push(param);
 	        }
 	        
-	        // !bang warning: array addition.
 	        return [ ref, 'JMP', insidelabel ].concat(f , [ 'PUSH', this.varhash[funcname + '_returnpoint'], 'MLOAD', 'JMP'] , [ label ] );
 
 	    } else if (stmt[0] == 'while') {
@@ -462,7 +445,6 @@ module.exports = function() {
 
 	        this.labelcollection[0] += 2;
 
-	        // !bang warning: array addition.
 	        return [ beglab ].concat(f , [ 'NOT', endref, 'SWAP', 'JMPI' ] , g , [ begref, 'JMP', endlab ] );
 
 	    } else if (stmt[0] == 'set') {
@@ -471,7 +453,6 @@ module.exports = function() {
 	        var rexp = this.compile_expr(stmt[2]);
 	        var lt = this.get_left_expr_type(stmt[1]);
 
-	        // !bang warning: array addition.
 	        var verb = 'MSTORE';
 	        if (lt == 'storage') {
 	        	verb = 'SSTORE';
@@ -499,12 +480,7 @@ module.exports = function() {
 			for (var stmtindex = 0; stmtindex < stmtslice.length; stmtindex++) {
 				var e = stmtslice[stmtindex];
 
-				// !bang warning: array addition.
-		        // for (e in stmt[1][1:]) {
-	            //   o += this.compile_left_expr(e,this.varhash)
-	            //   o += [ 'SSTORE' if get_left_expr_type(e) == 'storage' else 'MSTORE' ]
-
-	            o.concat(this.compile_left_expr(e));
+				o.concat(this.compile_left_expr(e));
 
 	            var verb = 'SSTORE';
 	            if (this.get_left_expr_type(e) == 'storage') {
@@ -525,8 +501,7 @@ module.exports = function() {
 
 			for (var stmtindex = 0; stmtindex < stmtslice.length; stmtindex++) {
 				
-				// !bang warning: array addition.
-	        	var s = stmtslice[stmtindex];
+				var s = stmtslice[stmtindex];
 	        	var slicecompiled = this.compile_stmt(s);
 	        	o = o.concat(slicecompiled);
 
@@ -541,28 +516,24 @@ module.exports = function() {
 	        var datan = this.compile_expr(stmt[4]);
 	        var datastart = this.compile_expr(stmt[5]);
 
-	        // !bang warning: array addition.
 	        return datastart.concat(datan,value,to,[ 'MKTX' ]);
 
-	    } else if (stmt[0] == 'fun' && stmt[1] in functionhash) {
+	    } else if (stmt[0] == 'fun' &&  functionhash.isset(stmt[1])) {
 
 	        // It's a bare function. Which looks like a statement, compile it as an expression.
 	        return this.compile_expr(stmt);
 
 	    } else if (stmt == 'stop') {
 	        
-	        // !bang warning: array addition.
 	        return [ 'STOP' ];
 
 	    } else if (stmt[0] == 'fun' && stmt[1] == 'suicide') {
 
-	    	// !bang warning: array addition.
-	        return this.compile_expr(stmt[2]).concat([ 'SUICIDE' ]);
+	    	return this.compile_expr(stmt[2]).concat([ 'SUICIDE' ]);
 
 	    } else if (stmt[0] == 'return') {
 
-	    	// !bang warning: array addition.
-	        return this.compile_expr(stmt[1]);
+	    	return this.compile_expr(stmt[1]);
 	    }
 
 	}
