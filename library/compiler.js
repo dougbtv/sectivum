@@ -252,8 +252,15 @@ module.exports = function() {
 	    
 	    } else if (expr[0] == 'multi') {
 	    
-	    	console.log("!bang !trace : sum situation. FIX THIS");
-	        return null; // sum([compile_expr(e,this.varhash) for e in expr[1:]],[])
+	    	var f = [];
+	        var stmtslice = expr.slice(1,expr.length);
+	        for (var stmtindex = 0; stmtindex < stmtslice.length; stmtindex++) {
+	        	var e = stmtslice[stmtindex];
+	        	var nowexpression = this.compile_expr(e);
+	        	f = f.concat(nowexpression);
+	        }
+
+	        return f;
 	    
 	    } else if (expr == 'tx.datan') {
 	    
