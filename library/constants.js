@@ -57,3 +57,7 @@ Array.prototype.clone = function() {
 	return this.slice(0);
 };
 
+Object.prototype.hashlength = function() {
+	return Object.keys(this).length;
+}
+
