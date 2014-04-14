@@ -159,18 +159,15 @@ module.exports = function() {
 	            throw "Wrong number of arguments: " + expr;
 	        }
 
-	        var sum = 0;
-	        // exprslice = expr[];
+	        var f = [];
+	        var stmtslice = expr.slice(2,expr.length);
+	        for (var stmtindex = 0; stmtindex < stmtslice.length; stmtindex++) {
+	        	var e = stmtslice[stmtindex];
+	        	var nowexpression = this.compile_expr(e);
+	        	f = f.concat(nowexpression);
+	        }
 
-	        // !bang : I don't like this.
-	        console.log("!bang !trace : sum situation. FIX THIS");
-
-
-	        var f = null; // sum([this.compile_expr(e,this.varhash) for e in expr[2:]],[])
-
-	        // refernce: var f = sum([this.compile_expr(e,this.varhash) for e in expr[2:]],[])
-
-	        return f + [funtable[expr[1]][0]]
+	        return f.concat([funtable[expr[1]][0]]);
 	    
 	    } else if (expr[0] == 'access') {
 	    
