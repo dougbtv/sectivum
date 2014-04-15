@@ -70,7 +70,7 @@ Object.prototype.contains = function() {
 }
 
 Object.prototype.isset = function(property) {
-	if (typeof this.property === 'undefined') {
+	if (typeof this[property] === 'undefined') {
 		return false;
 	} else {
 		return true;

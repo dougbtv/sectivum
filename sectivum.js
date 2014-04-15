@@ -19,14 +19,21 @@ var compiler = new Compiler();
 
 parser.loadFile('example.cll');
 
-compile_result = compiler.compile_stmt(parser.ast)
+var compile_result = compiler.compile_stmt(parser.ast)
 
-console.log("!trace compile result! %j \n\n",compile_result);
+// console.log("!trace compile result! %j \n\n",compile_result);
 
 // For some pretty output during debugging.
 // var prettyjson = require('prettyjson');
 // console.log(prettyjson.render(compile_result));
 
-throw "!trace good work. next is assemble";
+var asm = compiler.assemble(compile_result);
 
-compiler.assemble(compile_result);
+output = "";
+for (var j = 0; j < asm.length; j++) {
+	output += asm[j] + " ";
+}
+
+console.log("Output: %s \n\n",output);
+
+

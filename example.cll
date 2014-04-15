@@ -1,9 +1,64 @@
+a = 10
+if a > 20:
+    b = a * 20
+elif a > 15:
+    b = 100
+else:
+    b = 200
+=====================
+c = sha256(500,400,300)
+===================
+x = tx.datan
+y = tx.data[0]
+z = tx.sender
+mktx(z,10^18,0,0)
+====================
+i = 0
+a = 1
+while i < 997:
+    a = (a * 3) % 997
+    i = i + 1
+contract.storage[-1] = a
+===============
+if 1 == 0:
+    a = 100
+elif 3 == 3:
+    b = 255
+    if 1 == 0:
+        a = 100
+    else:
+        b = 256
+elif 2 == 4:
+    a = 100
+
+===============
 def foo(bar):
     bar = bar - 10
     return bar
 
 b = 1
 a = foo(b)
+x = array()
+x[0] = 4
+x[1] = 6
+x[2] = 8
+
+if tx.value <= 25 * 10^18:
+    stop
+elif contract.storage[tx.data[0]] or tx.data[0] < 1000:
+    stop
+contract.storage[tx.data[0]] = tx.data[1]
+
+if 1 == 0:
+    contract.storage[100] = 100
+elif 3 == 3:
+    contract.storage[255] = 255
+    if 1 == 0:
+        contract.storage[100] = 100
+    else:
+        contract.storage[256] = 256
+elif 2 == 4:
+    contract.storage[100] = 100
 
 ==============
 if 1 < 0:

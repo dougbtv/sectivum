@@ -62,15 +62,13 @@ module.exports = function() {
 
 	this.assemble = function(compiled) {
 
-		console.log("!trace I got compiled: %j \n\n", compiled);
-
 		var iq = compiled.clone();
 		var mq = [];
 		var pos = 0;
 		var labelmap = {};
 
 		while (iq.length) {
-			
+
 			var front = iq.shift();
 
 			if (typeof front === 'string' && front.substring(0,6) == 'LABEL_') {
@@ -87,8 +85,12 @@ module.exports = function() {
 			}
 		}
 
+
 		var oq = [];
-		for (m in mq) {
+
+		for (var idx = 0; idx < mq.length; idx++) {
+
+			var m = mq[idx];
 
 			if (typeof m === 'string' && m.substring(0,4) == 'REF_') {
 		    
@@ -96,10 +98,13 @@ module.exports = function() {
 		        oq.push(labelmap[m.substring(4,m.length)]);
 		    
 		    } else {
+
 		    	oq.push(m);
+
 		    }
 
 		}
+
 		return oq;
 
 
@@ -131,6 +136,7 @@ module.exports = function() {
 	            return [expr];
 	        
 	        } else if (this.varhash.isset(expr)) {
+
 	            return ['PUSH',this.varhash[expr],'MLOAD'];
 	        
 	        } else if (pseudovars[expr]) {
