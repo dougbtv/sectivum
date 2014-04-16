@@ -50,21 +50,24 @@ module.exports = function() {
 	// ---------------------------------------------------------
 	// -- loadFile : Load up a file for parsing.
 
-	this.loadFile = function(filepath) {
+	this.loadFile = function(filepath,iscll) {
+
+		if (typeof iscll === 'undefined') {
+			iscll = false;
+		}
 
 		// Read the file into a string.
 		filecontents = this.fs.readFileSync(filepath,{encoding: "ascii"});
 
 		// console.log(filecontents);
 
-		// Ok, rip apart the lines.
 		filelines = filecontents.toString().split("\n");
 		applines = [];
 
-		for(i in filelines) {
-
+		for(var lineidx = 0; lineidx < filelines.length; lineidx++) {
+			
 			// Get each line.
-			line = filelines[i];
+			var line = filelines[lineidx];
 			console.log(line);
 
 			// Look for a multi-equals sign, to break chunks of code.
@@ -79,18 +82,48 @@ module.exports = function() {
 
 		}
 
+		console.log("!trace, applines");
 		console.log(applines);
-
 		console.log("\n\n");
 
-		// Ok, now let's parse the lines
+		if (!iscll) {
 
-		
-		this.ast = this.parseLines(applines);
+			// sectivum compilin' time!
+			
+			// Ok preprocess it.
+			var processed = this.preprocess(applines);
+
+			this.ast = this.parSec(processed);
+
+			throw "awesome dude. !trace death";
+
+
+		} else {
+
+			// CLL COMPILING MODE.
+
+			// Ok, rip apart the lines.
+			
+
+			// Ok, now let's parse the lines
+
+			
+			this.ast = this.parseLines(applines);
+		}
+
+
 
 		console.log("AST: %j", this.ast, "\n\n");
 
 		// console.log(prettyjson.render(this.ast));
+
+	}
+
+	
+
+	this.parSec = function(instring) {
+
+
 
 	}
 
@@ -148,7 +181,7 @@ module.exports = function() {
 				}
 			);
 
-			// console.log("child block: ", child_block);
+			console.log("child block: ", child_block);
 
 
 

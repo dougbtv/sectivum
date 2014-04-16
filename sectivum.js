@@ -16,10 +16,18 @@ var parser = new Parser();
 var Compiler = require("./library/compiler.js");		// the Compiler
 var compiler = new Compiler();
 
+var PreProcessor = require("./library/preProcessor.js");		// the Compiler
+var preprocessor = new PreProcessor();
 
-parser.loadFile('example.cll');
+
+
+// parser.loadFile('example.cll');
+
+preprocessor.loadFile('example.cll');
 
 var compile_result = compiler.compile_stmt(parser.ast)
+
+
 
 // console.log("!trace compile result! %j \n\n",compile_result);
 

@@ -1,3 +1,48 @@
+// Give a define.
+#define FOO 10 
+$a = FOO;
+// A conditional
+if ($a > 20) {
+    $b = $a * 20;
+    // Inner conditional
+    if ($b > 20) {
+        $b = $b - 5;
+    }
+    $quux = "thing!";
+} else if ($a > 15) {
+    $b = 100;
+} else {
+    $b = 200;
+}
+=====================
+#define FOO 1024
+// Any single line.
+#define BAR_STER 2048
+// That's ok
+$a = 10; // and like this.
+$foo = "thin g\" er";
+$bar = "\/\/comment in string";
+if ($a > 20) { // tricky // thinger
+
+    $b = $a * 20; /* one of
+      these */ 
+    $quux = "tha thang";
+
+} else if /*inline */($a > FOO) {
+/*
+    multi
+        line
+            banger */
+
+
+    $b = BAR_STER;
+} else {
+
+    $b = 200;
+}
+=====================
+$doug = "chu ng"; $dung = "fungi";
+======================
 a = 10
 if a > 20:
     b = a * 20
