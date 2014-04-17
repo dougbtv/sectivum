@@ -23,10 +23,13 @@ var preprocessor = new PreProcessor();
 
 // parser.loadFile('example.cll');
 
+
 preprocessor.loadFile('example.cll');
 
-var compile_result = compiler.compile_stmt(parser.ast)
+parser.parSecInitialize(preprocessor.processed_file,preprocessor.stringers);
 
+
+var compile_result = compiler.compile_stmt(parser.ast)
 
 
 // console.log("!trace compile result! %j \n\n",compile_result);

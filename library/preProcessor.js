@@ -3,7 +3,14 @@ module.exports = function() {
 	// Include the filesystem module.
 	this.fs = require('fs');
 
+	// We'll result in two things.
+
+	// Our collection of strings.
 	this.stringers = []; 		// Our collection of known strings.
+
+	// And our parsed result.
+	this.processed_file = "";
+
 	
 
 	this.preprocess = function(applines) {
@@ -308,14 +315,9 @@ module.exports = function() {
 
 		}
 		
-		// sectivum compilin' time!
-		
 		// Ok preprocess it.
-		var processed = this.preprocess(applines);
-
-		// this.ast = this.parSec(processed);
-
-		throw "awesome dude. !trace death";
+		
+		this.processed_file = this.preprocess(applines);
 
 	}
 

@@ -46,6 +46,9 @@ module.exports = function() {
 
 	// Our abstract syntax tree.
 	this.ast = [];
+
+	// Our collection of strings from the preprocessor.
+	this.stringers = [];
 	
 	// ---------------------------------------------------------
 	// -- loadFile : Load up a file for parsing.
@@ -119,11 +122,196 @@ module.exports = function() {
 
 	}
 
-	
+
+	this.parSecInitialize = function(source_string,string_collection) {
+
+		this.stringers = string_collection;
+
+		this.ast = this.parSec(source_string);
+
+	}
+
 
 	this.parSec = function(instring) {
 
 
+		var output = [];
+		var re_matchcurly = /^\{/;
+		var re_matchendcurly = /^\}/;
+
+		// Scan through this string until you find a curly.
+		// That's going to be your current sequence.
+		// !bang
+		
+		var current_block = {
+			start: 0,
+			end: 0,
+		};
+
+		var current_sequence = "";
+		
+		for (var stridx = 0; stridx < instring.length; stridx++) {
+			var restof = instring.substring(stridx,instring.length);
+			// console.log("!trace restof: ",restof);
+			
+			// Assume no child block.
+			var child_block = "";
+
+			if (re_matchcurly.match(restof) || stridx+1==instring.length) {
+				// That's a child block.
+
+				// Everything up to this was the primary block.
+				// console.log("block start: %d",current_block.start);
+				current_sequence = instring.substring(current_block.start,stridx);
+				// console.log("!trace current seq: ",current_sequence);
+
+				// Find the outer bounds of the child block.
+				var ignore_layers = -1;
+				for (var childidx = 0; childidx < restof.length; childidx++) {
+					var childrestof = restof.substring(childidx,restof.length);
+					// console.log("!trace a: ",childrestof);
+					// console.log("!trace childrestof: ",childrestof);
+					// If we find another left curly... we increment ignore layers.
+					if (re_matchcurly.match(childrestof)) {
+						ignore_layers++;
+						continue;
+					}
+					// If we find a right curly
+					// we end if we have no layers to ignore.
+					// otherwise, we reduce our ignore layers
+					if (re_matchendcurly.match(childrestof)) {
+
+
+						if (ignore_layers) {
+							ignore_layers--;
+						} else {
+							
+							// That's it, thats the outer bounds of this child block.
+							// Pack it up.
+							child_block = restof.substring(1,childidx);
+							break;
+						}
+					}
+				}
+
+				
+				// Now we'd parse that current sequence to lines!!! damn.
+				// pop the final semicolon terminator off.
+				var re_lastsem = /;$/;
+				current_sequence = current_sequence.replace(re_lastsem,"");
+
+				var sequence_lines = current_sequence.split(";");
+
+				// console.log("!trace sequence lines: ",sequence_lines);
+				// console.log("!trace heres the child block: ",child_block);
+
+				// and tokenize it! damn.
+				// Ok time to parse.
+				for (var seqidx = 0; seqidx < sequence_lines.length; seqidx++) {
+					
+					var out = this.parseSingleLine(sequence_lines[seqidx],true);
+					// console.log("!trace single line result: ",out);
+
+					// Include the child block into the parsed expression
+					block_statements = ['if', 'else', 'while', 'else if','def'];
+
+					// Our child block comes at the end of the current sequence.
+					// So see if we're at the end of the sequence, and we're at a child block-able expression.
+					if (block_statements.contains(out[0])) {
+
+						if (child_block.length == 0) {
+							throw "If/else/while statement must have sub-clause! " + i;
+						} else {
+							var parseresult = this.parSec(child_block);
+							out.push(parseresult);
+							
+						}
+
+					} else {
+
+						if (seqidx == sequence_lines.length - 1) {
+							if (child_block.length > 0) {
+								throw "Not an if/else/while statement, can't have sub-clause! "+ sequence_lines[seqidx];
+							}
+						}
+
+					}
+
+					// This is somewhat complicated. Essentially, it converts something like
+					// "if c1 then s1 elif c2 then s2 elif c3 then s3 else s4" (with appropriate
+					// indenting) to [ if c1 s1 [ if c2 s2 [ if c3 s3 s4 ] ] ]
+					if (out[0] == 'else if') {
+
+						if (output.length == 0) {
+							throw "Cannot start with else if!: " + sequence_lines[seqidx];
+						}
+
+						var u = output.last();
+
+						while (u.length == 4) {
+							u = u.last();
+						}
+
+						var pushto = ['elif'];
+						var targetslices = out.slice(1,out.length);
+						for (var tsi = 0; tsi < targetslices.length; tsi++) {
+							pushto.push(targetslices[tsi]);
+						}
+						u.push(pushto);
+
+					} else if (out[0] == 'else') {
+
+						if (output.length == 0) {
+							throw "Cannot start with else!: " + i;
+						}
+
+						u = output.last();
+
+						while (u.length == 4) {
+							u = u.last();
+						}
+
+						u.push(['else',out[1]]);
+						// u.push([out[1]]);
+
+					} else {
+						// Normal case: just add the parsed line to the output
+						output.push(out)
+					}
+
+					// console.log("!trace OUTPUT: %j",output);
+
+				}
+
+
+
+
+				// then we check if there's a child block.
+				// ...or error if it's not supposed to have one.
+
+				// then we pull together the if/elseif/else.
+
+				// Hey we have to move the current block to the end of the child block.
+				// console.log("!trace moveahead: ",childidx);
+				current_block.start = stridx + childidx + 1;
+				current_block.end = stridx;
+				stridx += childidx;
+
+
+			}
+
+		}
+
+		if (output.length == 1) {
+			return output[0];
+		} else {
+			var sequencer = ['seq'];
+			var outitem;
+			for (outitem = 0; outitem < output.length; outitem++) {
+				sequencer.push(output[outitem]);
+			}
+			return sequencer;
+		} 
 
 	}
 
@@ -300,6 +488,138 @@ module.exports = function() {
 		} else {
 			return 'symb';
 		}
+
+	}
+
+	this.charTypeSectivum = function(mychar) {
+
+		re_alphanum = /[\$a-zA-Z0-9\._]/;
+		re_space = /[\s]/;
+		re_brack = /[\(\)\[\]]/;
+		re_minus = /\-/;
+		
+		if (re_alphanum.match(mychar)) {
+		    return 'alphanum';
+		} else if (re_space.match(mychar)) {
+			return 'space';
+		} else if (re_brack.match(mychar)) {
+			return 'brack';
+		} else if (re_minus.match(mychar)) {
+			return 'minus';
+		} else {
+			return 'symb';
+		}
+
+	}
+
+	this.sectivumFeatures = function(intoken) {
+
+		// Here we'll add the features that really describe sectivum.
+		// We'll start it's life with the simple things that 
+		// make this language it's own.
+		// 1. Strings.
+		var re_stringmatch = /^__STRING__/;
+		var re_stringid = /^__STRING__(\d+)_$/;
+		if (re_stringmatch.match(intoken)) {
+
+			var stringid = parseInt(intoken.replace(re_stringid,"$1"));
+
+			// We'll eventually want to pack this into bytes.
+			// ...and later, add concatenation and string manipulation.
+			var targetString = this.stringers[stringid];
+
+			// Figure each ascii byte.
+			var hexpack = [];
+			for (var charidx = 0; charidx < targetString.length; charidx++) {
+				var charvalue = targetString.charCodeAt(charidx);
+
+				hexpack.push(charvalue.toString(16));
+
+			}
+
+			// Join it into a hex string.
+			hexpack = hexpack.join("");
+			hexpack = "0x" + hexpack;
+			
+			// Now, convert that to an INT, but as a string, haha.
+			intoken = parseInt(hexpack).toString();
+			
+		} else {
+
+			// 2. Dollar sign referenced variables.
+			re_dereference = /^\$/;
+			re_elseif = /elseif/g;
+
+			intoken = intoken.replace(re_dereference,"");
+			intoken = intoken.replace(re_elseif,"elif");
+
+		}
+
+
+		return intoken;
+		
+
+
+	}
+
+	this.tokenizeSec = function(linein) {
+
+		// console.log("!trace ------------------------------------ the linein: %s",linein);
+
+		var output = [];
+		var current_token = "";
+		var lastctype = "";
+
+		var nextToken_unbound = function(is_end) {
+
+			if (typeof is_end === 'undefined') { is_end = false; }
+
+			if (lastctype != ctype || is_end) {
+				//console.log("!trace: not equal");
+				// That's a new token.
+				// Push the current token, if it's not empty.
+				if (current_token.length) {
+					// console.log("!trace not empty.");
+
+					// Add the sectivum features.
+					current_token = this.sectivumFeatures(current_token); 
+
+					output.push(current_token);
+					current_token = "";
+				}
+			}
+
+		}
+
+		var nextToken = nextToken_unbound.bind(this);
+
+		for (var lineidx = 0; lineidx < linein.length; lineidx++) {
+
+			var eachchar = linein.charAt(lineidx);
+			var ctype = this.charTypeSectivum(eachchar);
+
+			// console.log("!trace each char: %s      (type: %s | last: %s)",eachchar,ctype,lastctype);
+
+			// When the character type changes, we make a new token.
+			// It should be as simple as that.
+
+			nextToken();
+
+			// Add this character to the current token.
+			current_token += eachchar;
+
+			// console.log("!trace current token: ",current_token);
+
+			// Set the last ctype
+			lastctype = ctype;
+
+			
+
+		}
+
+		nextToken(true);
+
+		return output;
 
 	}
 
@@ -518,7 +838,7 @@ module.exports = function() {
 	        typ = this.tokenType(tok);
 
 	        if (typ == 'alphanum') {
-	            oq.push(tok);
+	        	 oq.push(tok);
 
 	        } else if (typ == 'lparen') {
 	            
@@ -576,16 +896,26 @@ module.exports = function() {
 	    if (oq.length == 1) {
 	        return oq[0];
 	    } else {
+	    	console.log("!trace <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< multi: ",oq);
 	        return [ 'multi', oq ];
 	    }
 
 	}
 
-	this.parseSingleLine = function(line) {
+	this.parseSingleLine = function(line,isSectivum) {
+
+		if (typeof isSectivum === 'undefined') {
+			isSectivum = false;
+		}
 
 		re_function = /^\s*[^\s]+\(.*\)$/;
 
-		tokens = this.tokenize(line.trim());
+		if (isSectivum) {
+			tokens = this.tokenizeSec(line.trim());
+			// console.log("!trace tokenized: ",tokens);
+		} else {
+			tokens = this.tokenize(line.trim());
+		}
 		
 		if (tokens[0] == 'if' || tokens[0] == 'while' || tokens[0] == 'def') {
 	        return [ tokens[0], this.shuntingYard(tokens.slice(1,tokens.length)) ];

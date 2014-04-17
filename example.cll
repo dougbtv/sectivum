@@ -1,5 +1,5 @@
 // Give a define.
-#define FOO 10 
+#define FOO -10 
 $a = FOO;
 // A conditional
 if ($a > 20) {
@@ -14,6 +14,18 @@ if ($a > 20) {
 } else {
     $b = 200;
 }
+$donkey = 500;
+=====================
+a = 10
+if a > 20:
+    b = a * 20
+    if b > 20:
+        b = b - 5
+    quux = "thing"
+elif a > 15:
+    b = 100
+else
+    b = 200
 =====================
 #define FOO 1024
 // Any single line.
