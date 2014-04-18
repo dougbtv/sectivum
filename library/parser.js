@@ -728,7 +728,7 @@ module.exports = function() {
 
 	this.tokenType = function(token) {
 
-		re_alphanum = /^[0-9a-z\-\.]*$/;
+		re_alphanum = /^[0-9a-z\-\._]*$/;
 
 		if (token == null) { 
 			return null; 
