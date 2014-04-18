@@ -1,0 +1,23 @@
+// Give a define.
+#define FOO -10
+$a = FOO;
+// A conditional
+if ($a > 20) {
+    $b = $a * 20;
+    // Inner conditional
+    if ($b > 20) {
+        $b = $b - 5;
+    }
+    $quux = "thing!";
+} else if ($a > 15) {
+    $b = 100;
+} else {
+    $b = 200;
+}
+$another = 500;
+=====================
+$a = 15;
+if ($a > 14) {
+    $b = $a + 1;
+}
+$a = $b * $a;

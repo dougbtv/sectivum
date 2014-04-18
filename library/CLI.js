@@ -47,6 +47,7 @@ module.exports = function(parser,compiler,preprocessor) {
 
 		} else if (typeof opts.string === 'string') {
 			// Compile from a string.
+			this.parseString(opts.string,function(){});
 
 		} else {
 
