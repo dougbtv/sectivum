@@ -286,11 +286,26 @@ module.exports = function() {
 	}
 
 
-	this.loadFile = function(filepath) {
+	// Load a file, or a string.
+	this.loadFile = function(filein,raw) {
 
 
-		// Read the file into a string.
-		filecontents = this.fs.readFileSync(filepath,{encoding: "ascii"});
+		// Optionally this can load a raw sting with the loadfile command.
+		if (typeof raw === 'undefined') {
+			raw = false;
+		}
+
+
+		if (!raw) {
+			// Read the file into a string.
+			if (!this.fs.existsSync(filein)) {
+				console.log("!trace file doesn't exist.");
+				return new Error("The file '" + filein + "' does not exist.");
+			}
+			var filecontents = this.fs.readFileSync(filein,{encoding: "ascii"});
+		} else {
+			var filecontents = filein;
+		}
 
 		// console.log(filecontents);
 
@@ -319,6 +334,11 @@ module.exports = function() {
 		
 		this.processed_file = this.preprocess(applines);
 
+	}
+
+	// Just load a string.
+	this.loadString = function(string_load) {
+		this.loadFile(string_load,true);
 	}
 
 

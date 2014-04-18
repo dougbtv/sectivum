@@ -19,18 +19,7 @@ var compiler = new Compiler();
 var PreProcessor = require("./library/preProcessor.js");		// the Compiler
 var preprocessor = new PreProcessor();
 
-
-
 // parser.loadFile('example.cll');
-
-
-preprocessor.loadFile('example.cll');
-
-parser.parSecInitialize(preprocessor.processed_file,preprocessor.stringers);
-
-
-var compile_result = compiler.compile_stmt(parser.ast)
-
 
 // console.log("!trace compile result! %j \n\n",compile_result);
 
@@ -38,13 +27,5 @@ var compile_result = compiler.compile_stmt(parser.ast)
 // var prettyjson = require('prettyjson');
 // console.log(prettyjson.render(compile_result));
 
-var asm = compiler.assemble(compile_result);
-
-output = "";
-for (var j = 0; j < asm.length; j++) {
-	output += asm[j] + " ";
-}
-
-console.log("Output: %s \n\n",output);
-
-
+var CLI = require('./library/CLI.js');
+var cli = new CLI(parser,compiler,preprocessor);

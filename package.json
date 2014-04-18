@@ -18,7 +18,9 @@
     "programming "
   ],
   "dependencies" : {
-      "restify"     :  "*",
+      "restify"    :  "*",
+      "prompt"     :  "*",
+      "nomnom"     :  "*",
       "prettyjson" : "*"
   }
 }
