@@ -1,7 +1,12 @@
 module.exports = function(parser,compiler,preprocessor) {
 
+	// A history of commands.
+	this.historypointer = -1;
+	this.history = [];
+
 	// Our interactive command prompt module.
 	var prompt = require('prompt');
+	var readline = require('readline');
 
 	this.myConstructor = function() {
 
@@ -36,7 +41,6 @@ module.exports = function(parser,compiler,preprocessor) {
 			   })
 		*/
 
-		// console.log("!trace options: ",opts);
 
 		if (typeof opts.file === 'string') {
 			// Work from a file.
@@ -51,19 +55,31 @@ module.exports = function(parser,compiler,preprocessor) {
 
 		} else {
 
-			// Command prompt mode
-			// setup promtps.
-			prompt.message = "sectivum.cli >".cyan;
-			prompt.delimiter = "".green;
+			
+			rl = readline.createInterface(process.stdin, process.stdout);
 
-			// start the prompt module.
-			prompt.start();
+			rl.setPrompt('sectivum cli> '.cyan);
+			rl.prompt();
 
-			// we run some things once upon init.
-			this.init = false;
+			// Act on the line input from the readline.
+			rl.on('line', function(line) {
+			
+				// parse the CLI input.
+				this.parseCLI(line.trim(),function(){
+					
+					// And start again.
+					rl.prompt();
 
-			// finally we start the interactive prompt.
-			this.startPrompt();
+				}.bind(this));
+
+				
+		
+			}.bind(this)).on('close', function() {
+
+				console.log('Have a great day!');
+				process.exit(0);
+		
+			}.bind(this));
 
 		}
 
