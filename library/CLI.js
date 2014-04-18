@@ -40,7 +40,10 @@ module.exports = function(parser,compiler,preprocessor) {
 
 		if (typeof opts.file === 'string') {
 			// Work from a file.
-			this.loadFile(opts.file);
+			
+			this.loadFile(opts.file,function() {
+				// Dont' really have to do anything else.
+			});
 
 		} else if (typeof opts.string === 'string') {
 			// Compile from a string.
@@ -81,15 +84,15 @@ module.exports = function(parser,compiler,preprocessor) {
 				}
 			}
 		}, function (err, result) {
-			this.parseCLI(result.cli);
-			// console.log("You said your name is: ".white + result.cli.cyan);
-			// And start again.
-			this.startPrompt();
+			this.parseCLI(result.cli,function(){
+				// And start again.
+				this.startPrompt();
+			}.bind(this));
 		}.bind(this));
 
 	}
 
-	this.parseCLI = function(cli) {
+	this.parseCLI = function(cli,callback) {
 
 		// split words by spaces.
 		var words = cli.split(" ");
@@ -97,7 +100,17 @@ module.exports = function(parser,compiler,preprocessor) {
 		switch (words[0]) {
 
 			case "load":
-				this.loadFile(words[0]);			
+				this.loadFile(words[1],function(){
+					callback();
+				});			
+				break;
+
+			case "parse":
+				var re_parseclean = /^parse\s+?/;
+				var mystr = cli.replace(re_parseclean,"");
+				this.parseString(mystr,function(){
+					callback();
+				});
 				break;
 
 			case "exit":
@@ -105,17 +118,56 @@ module.exports = function(parser,compiler,preprocessor) {
 				process.exit();
 				break;
 
+			// Empty line.
+			case "":
+				callback();
+				break;
+
+			default:
+				console.log("Unknown command:",words[0]);
+				callback();
+				break;
+
 		}
 
 	}
 
-	this.loadFile = function(infile) {
+	this.parseString = function(instr,callback) {
 
-		preprocessor.loadFile(infile)
+		preprocessor.loadFile(instr,true,function(err){
+
+			// Trace any preprocessor errors.
+			if (err) { throw "!trace error: " + err; }
+
+			this.compileIt(function(){
+				callback();
+			});
+		}.bind(this));
+
+	}
+
+	this.loadFile = function(infile,callback) {
+
+		preprocessor.loadFile(infile,false,function(err) {
+
+			// Trace any preprocessor errors.
+			if (err) { throw "!trace error: " + err; }
+		
+			this.compileIt(function(){
+				callback();	
+			});
+			
+		}.bind(this));
+	
+	}
+
+	this.compileIt = function(callback) {
+
 		parser.parSecInitialize(preprocessor.processed_file,preprocessor.stringers);
 		var asm = compiler.assemble(compiler.compile_stmt(parser.ast));
 		this.printOutput(asm);
-	
+		callback();
+
 	}
 
 	this.printOutput = function(asm) {

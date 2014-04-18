@@ -13,40 +13,60 @@ module.exports = function() {
 
 	
 
-	this.preprocess = function(applines) {
+	this.preprocess = function(applines,callback) {
 
 		// Strip out the comments.
 		// TODO: Right now you can't have comments inside a string.
 		// It kinda looks like garbage when you do that anyways, so... 
 		// My recommendation: Escape comment-like characters in strings.
-		applines = this.processRemarks(applines);
+		this.processRemarks(applines,function(applines){
 
-		// Get the lines.
-		applines = this.processDefines(applines);
+			// Get the lines.
+			this.processDefines(applines,function(err,applines){
 
-		// join the lines provided.
-		var input = applines.join("\n");
+				if (err) {
+					console.log("!trace g");
+					callback(err);
+				} else {
 
-		// console.log("!trace input: ",input);
+					// join the lines provided.
+					var input = applines.join("\n");
 
-		input = this.stringify(input);
+					// console.log("!trace input: ",input);
+					this.stringify(input,function(err,input){
 
+						if (err) {
+							callback(err);
+						} else {
 
-		// console.log("!trace stringified -------------------\n%s\n-------------------\n\n",input);
-		// console.log("!trace stringers ----\n %j ----\n",this.stringers);
+							// console.log("!trace stringified -------------------\n%s\n-------------------\n\n",input);
+							// console.log("!trace stringers ----\n %j ----\n",this.stringers);
 
+							// Let's remove all whitespace, oooooh.
+							re_whitespace = /\s/g;
+							input = input.replace(re_whitespace,"");
 
-		// Let's remove all whitespace, oooooh.
-		re_whitespace = /\s/g;
-		input = input.replace(re_whitespace,"");
+							// console.log("!trace whitespaced -------------------\n%s\n-------------------\n\n",input);
 
-		// console.log("!trace whitespaced -------------------\n%s\n-------------------\n\n",input);
+							// return input;
 
-		return input;
+							callback(null,input);	
+	
+						}
+						
+					}.bind(this));
+
+				}
+
+			}.bind(this));
+
+		}.bind(this));
+
+		
 
 	}
 
-	this.processRemarks = function(applines) {
+	this.processRemarks = function(applines,callback) {
 
 		var result = [];
 		var finding_block = false;
@@ -119,11 +139,11 @@ module.exports = function() {
 			}
 		}
 
-		return result;
+		callback(result);
 
 	}
 
-	this.processDefines = function(applines) {
+	this.processDefines = function(applines,callback) {
 
 		var defines = {}; // Collection of lines.
 
@@ -159,7 +179,7 @@ module.exports = function() {
 
 				} else {
 
-					throw "In line number " + linenumber + " with the define statement of '" + line + "' I can't parse it properly. Sorry\n";
+					callback(new Error("In line number " + linenumber + " with the define statement of '" + line + "' I can't parse it properly. Sorry"));;
 
 				}
 
@@ -189,11 +209,11 @@ module.exports = function() {
 			}
 		}
 
-		return result;
+		callback(null,result);
 
 	}
 
-	this.stringify = function(input) {
+	this.stringify = function(input,callback) {
 
 		// I think the first thing we do is collect all the strings.
 		// But do it multi-line.
@@ -278,39 +298,17 @@ module.exports = function() {
 
 		// Check to see that we're not in a string.
 		if (instring) {
-			throw "You have an unterminated string. [!todo add where exactly that is.]";
+			callback(new Error("You have an unterminated string. [!todo add where exactly that is.]"));
 		}
 
-		return stringified;		
+		callback(null,stringified);		
 
 	}
 
+	this.readInput = function(filecontents,callback) {
 
-	// Load a file, or a string.
-	this.loadFile = function(filein,raw) {
-
-
-		// Optionally this can load a raw sting with the loadfile command.
-		if (typeof raw === 'undefined') {
-			raw = false;
-		}
-
-
-		if (!raw) {
-			// Read the file into a string.
-			if (!this.fs.existsSync(filein)) {
-				console.log("!trace file doesn't exist.");
-				return new Error("The file '" + filein + "' does not exist.");
-			}
-			var filecontents = this.fs.readFileSync(filein,{encoding: "ascii"});
-		} else {
-			var filecontents = filein;
-		}
-
-		// console.log(filecontents);
-
-		filelines = filecontents.toString().split("\n");
-		applines = [];
+		var filelines = filecontents.split("\n");
+		var applines = [];
 
 		for(var lineidx = 0; lineidx < filelines.length; lineidx++) {
 			
@@ -332,7 +330,55 @@ module.exports = function() {
 		
 		// Ok preprocess it.
 		
-		this.processed_file = this.preprocess(applines);
+		this.preprocess(applines,function(err,fully_preprocessed){
+			this.processed_file = fully_preprocessed;
+			callback(err);
+		}.bind(this));
+
+	}
+
+	// Load a file, or a string.
+	this.loadFile = function(filein,is_str,callback) {
+
+
+		// Optionally this can load a raw sting with the loadfile command.
+
+		if (!is_str) {
+
+			this.fs.exists(filein, function (exists) {
+
+				if (exists) {
+
+					// Read the file.
+					this.fs.readFile(filein,{encoding: "ascii"},function(err, fileresult) {
+
+						// Handle read file error.
+						if (err) { callback(err); }
+
+						// Ok, that's good, now we can input it to the preprocessor.
+						this.readInput(fileresult,function(err) {
+							callback(err);
+						});
+
+					}.bind(this));
+
+				
+
+				} else {
+
+					callback(new Error("The file '" + filein + "' does not exist."));
+					
+				}
+
+			}.bind(this));
+
+		} else {
+
+			this.readInput(filein,function(err) {
+				callback(err);
+			});
+
+		}
 
 	}
 

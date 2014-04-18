@@ -1,5 +1,5 @@
 // Give a define.
-#define FOO -10 
+#define FOO -10
 $a = FOO;
 // A conditional
 if ($a > 20) {
