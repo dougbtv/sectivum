@@ -1,13 +1,23 @@
 // public/core.js
 var sectivumFrontEnd = angular.module('sectivumFrontEnd', []);
 
-function navControl($scope, $location) {
+function sectivumMainController($scope, $location, $http) {
+
+	$scope.formData = {};
+
+	// Stores which page we're currently on.
+	$scope.onPage = $location.path().substring(1) || 'home';
+
+	console.log("!trace begins here");
 
 	// console.log("!trace got the nav controller");
     $scope.navClass = function (page) {
     	// console.log("!trace Nav class called page: ",page);
-    	// console.log("!trace Nav class currentRoute: ",$location.path().substring(1));
+    	console.log("!trace Nav class currentRoute: ",$location.path().substring(1));
         var currentRoute = $location.path().substring(1) || 'home';
+        if (currentRoute != $scope.onPage) {
+        	$scope.onPage = currentRoute;
+        }
         return page === currentRoute ? 'active' : '';
     };
 
@@ -15,15 +25,6 @@ function navControl($scope, $location) {
     	console.log("!trace page request: ",page);
     	$scope.onPage = page;
     }
-
-}
-
-
-function sectivumMainController($scope, $http) {
-
-	$scope.formData = {};
-
-	console.log("!trace begins here");
 
 }
 
@@ -66,3 +67,12 @@ function mainController($scope, $http) {
 	};
 
 }
+
+
+
+
+
+$(document).ready(function(){
+    $("[data-toggle=tooltip]").tooltip({ placement: 'right'});
+});
+
