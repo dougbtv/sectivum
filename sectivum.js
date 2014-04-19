@@ -27,5 +27,14 @@ var preprocessor = new PreProcessor();
 // var prettyjson = require('prettyjson');
 // console.log(prettyjson.render(compile_result));
 
+// Restify object, for making RESTful APIs
+var restify = require('restify');
+var RestServer = require('./library/server.js');
+
+var server = restify.createServer();
+server.use(restify.bodyParser());
+
+var restserver = new RestServer(server,constants);
+
 var CLI = require('./library/CLI.js');
-var cli = new CLI(parser,compiler,preprocessor);
+var cli = new CLI(parser,compiler,preprocessor,restserver,constants);

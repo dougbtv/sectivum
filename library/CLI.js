@@ -1,4 +1,4 @@
-module.exports = function(parser,compiler,preprocessor) {
+module.exports = function(parser,compiler,preprocessor,restserver,constants) {
 
 	// Our interactive command prompt module.
 	var prompt = require('prompt');
@@ -15,12 +15,17 @@ module.exports = function(parser,compiler,preprocessor) {
 			  help: 'Compile given file'
 		   })
 		   .option('string', {
-			  abbr: 's',
+			  abbr: 'str',
 			  metavar: 'STRING',
 			  help: 'Compile a string'
 		   })
 		   .option('cli', {
 		   	  abbr: 'c',
+			  flag: true,
+			  help: 'start CLI'
+		   })
+		   .option('server', {
+		   	  abbr: 's',
 			  flag: true,
 			  help: 'start CLI'
 		   })
@@ -35,6 +40,13 @@ module.exports = function(parser,compiler,preprocessor) {
 					 return "version 1.2.4";
 				  }
 			   })
+
+
+
+
+			// Setup restify
+			
+
 		*/
 
 
@@ -48,6 +60,10 @@ module.exports = function(parser,compiler,preprocessor) {
 		} else if (typeof opts.string === 'string') {
 			// Compile from a string.
 			this.parseString(opts.string,function(){});
+
+		} else if (opts.server) {
+
+			restserver.serverStart();
 
 		} else {
 
