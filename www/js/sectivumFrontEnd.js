@@ -78,7 +78,7 @@ function sectivumMainController($scope, $location, $http) {
 
     $scope.sampleFile = function() {
 
-		var sample = '// Set some variables.\n$a = 15;\n$b = 20;\n// Make a conditional\nif ($b > $a) {\n  $c = 100;\n} else {\n  // Else we do this.\n  $d = "quux";\n}';
+		var sample = '// Set some variables.\n#define FOO 15\n$a = FOO;\n$b = 20;\n// Make a conditional\nif ($b > $a) {\n  $c = 100;\n} else {\n  // Else we do this.\n  $d = "quux";\n}';
 
 		$scope.formData.input = sample;
 
