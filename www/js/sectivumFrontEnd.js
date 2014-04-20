@@ -8,11 +8,8 @@ function sectivumMainController($scope, $location, $http) {
 	// Stores which page we're currently on.
 	$scope.onPage = $location.path().substring(1) || 'home';
 
-	// console.log("!trace got the nav controller");
-    $scope.navClass = function (page) {
-    	// console.log("!trace Nav class called page: ",page);
-    	// console.log("!trace Nav class currentRoute: ",$location.path().substring(1));
-        
+	$scope.navClass = function (page) {
+    	
         // Get the route.
         var currentRoute = $location.path().substring(1) || 'home';
 
@@ -24,11 +21,12 @@ function sectivumMainController($scope, $location, $http) {
         return page === currentRoute ? 'active' : '';
     };
 
+    // Set which page we're on.
     $scope.switchPage = function (page) {
-    	// console.log("!trace page request: ",page);
     	$scope.onPage = page;
     }
 
+    // Go ahead and compile the input.
     $scope.hitCompile = function() {
 
     	console.log($scope.formData);
@@ -63,7 +61,6 @@ function sectivumMainController($scope, $location, $http) {
 	    	var eachasm = $scope.asm[index];
 	    	
 	    	if (eachasm.match(re_trace)) {
-	    		console.log("!trace we got a match!");
 	    		return "info";
 	    	} else {
 	    		return "";
@@ -76,6 +73,8 @@ function sectivumMainController($scope, $location, $http) {
 
 
     }
+
+    // Load a sample file, so you can see how it works without having to type in code.
 
     $scope.sampleFile = function() {
 
