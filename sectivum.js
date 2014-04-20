@@ -34,7 +34,7 @@ var RestServer = require('./library/server.js');
 var server = restify.createServer();
 server.use(restify.bodyParser());
 
-var restserver = new RestServer(server,constants);
+var restserver = new RestServer(server,constants,Parser,Compiler,PreProcessor);
 
 var CLI = require('./library/CLI.js');
 var cli = new CLI(parser,compiler,preprocessor,restserver,constants);

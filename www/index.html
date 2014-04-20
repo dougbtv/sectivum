@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html ng-app="sectivumFrontEnd">
 	<head>
@@ -9,7 +8,7 @@
 		<meta name="author" content="">
 		<link rel="shortcut icon" href="../../assets/ico/favicon.ico">
 
-		<title>Sticky Footer Navbar Template for Bootstrap</title>
+		<title>s e c t i v u m</title>
 
 		<!-- Latest compiled and minified CSS -->
 		<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
@@ -52,25 +51,13 @@
 					<ul class="nav navbar-nav">
 
 						<!-- nice example: http://jsfiddle.net/creatifyme/YCw99/ -->
-						<!--
-
-								<div class="well sidebar-nav" ng-app="navList">
-									<ul class="nav nav-list" ng-controller="navCtrl">
-										<li ng-class="navClass('home')"><a href='#/home'>Home</a></li>
-										<li ng-class="navClass('about')"><a href='#/about'>About Us</a></li>
-										<li ng-class="navClass('contact')"><a href='#/contact'>Contact Us</a></li>
-									</ul>
-								</div>
-
-						-->
-
+						
 						<li ng-class="navClass('home')" 	ng-click="switchPage('home')"><a href="#/home">	Home</a></li>
 						<li ng-class="navClass('compiler')" ng-click="switchPage('compiler')"><a href="#/compiler">Compiler</a></li>
 						<li ng-class="navClass('about')" 	ng-click="switchPage('about')"><a href="#/about">About</a></li>
 						
-						<!-- <li class="active"><a href="#">Home</a></li>
-						<li><a href="#about">About</a></li>
-						<li><a href="#contact">Contact</a></li> -->
+						<!-- drop down example.
+
 						
 						<li class="dropdown">
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Dropdown <b class="caret"></b></a>
@@ -84,6 +71,8 @@
 								<li><a href="#">One more separated link</a></li>
 							</ul>
 						</li>
+
+						-->
 
 					</ul>
 				</div><!--/.nav-collapse -->
@@ -122,9 +111,17 @@
 					<div class="col-lg-6">
 					  <h4>Input</h4>
 					  <p>
-					  	<textarea class="form-control" rows="12"></textarea>
+					  	<textarea class="form-control" rows="12" ng-model="formData.input"></textarea>
 					  </p>
-					  <button type="button" class="btn btn-primary">Compile</button>
+					  <p>
+						  <button type="button" class="btn btn-primary" ng-click="hitCompile()">Compile</button>
+						  <button type="button" class="btn btn-default" ng-click="sampleFile()">Sample File</button>
+					  </p>
+					  <h4>Output</h4>
+					  <p>
+					  	<textarea class="form-control" rows="6" ng-model="formData.output" disabled></textarea>
+					  </p>
+					    
 					</div>
 
 					<div class="col-lg-6">
@@ -132,7 +129,7 @@
 						<h4>Assembled</h4>
 						
 						<p>
-							<input type="text" class="form-control" placeholder="Trace Via Regex...">
+							<input type="text" class="form-control" placeholder="Trace Via Regex..." ng-model="formData.traceregex">
 						</p>
 
 						<table class="table table-striped table-bordered table-hover table-condensed">
@@ -140,10 +137,12 @@
 								<th>Counter</th>
 								<th>Instruction</th>
 							</thead>
-							<tr>
-								<td>1</td>
-								<td>JUMPI</td>
+							
+							<tr ng-repeat="asmitem in asm" ng-class="traceByRegex($index)">
+								<td>{{$index + 1}}</td>
+								<td>{{asmitem}}</td>
 							</tr>
+
 						</table>
 					
 					</div>

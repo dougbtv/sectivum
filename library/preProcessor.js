@@ -314,7 +314,7 @@ module.exports = function() {
 			
 			// Get each line.
 			var line = filelines[lineidx];
-			console.log(line);
+			// console.log(line);
 
 			// Look for a multi-equals sign, to break chunks of code.
 			pattern_equals = /\={3}/;
@@ -339,7 +339,6 @@ module.exports = function() {
 
 	// Load a file, or a string.
 	this.loadFile = function(filein,is_str,callback) {
-
 
 		// Optionally this can load a raw sting with the loadfile command.
 
