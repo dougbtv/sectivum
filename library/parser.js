@@ -734,22 +734,22 @@ module.exports = function() {
 			return null; 
 
 		} else if (['(','['].contains(token)) { 
-			return 'lparen'; 
+			return 'left_paren'; 
 
 		} else if ([')',']'].contains(token)) { 
-			return 'rparen'; 
+			return 'right_paren'; 
 
 		} else if (token == ',') { 
 			return 'comma'; 
 
 		} else if (['!'].contains(token)) { 
-			return 'monop' ; 
+			return 'unary_operation' ; 
 
 		} else if (typeof token !== 'string') { 
 			return 'compound'; 
 
 		} else if (precedence[token]) { 
-			return 'op';
+			return 'binary_operation';
 
 		} else if (re_alphanum.match(token)) { 
 			return 'alphanum'; 
@@ -780,22 +780,22 @@ module.exports = function() {
 	        var tok = stack.pop();
 	        var typ = parent.tokenType(tok);
 
-	        if (typ == 'op') {
+	        if (typ == 'binary_operation') {
 
 	            var a = oq.pop();
 	            var b = oq.pop();
 	            oq.push([ tok, b, a]);
 
-	        } else if (typ == 'monop') {
+	        } else if (typ == 'unary_operation') {
 
 	            var a = oq.pop();
 	            oq.push([ tok, a ]);
 
-	        } else if (typ == 'rparen') {
+	        } else if (typ == 'right_paren') {
 	            
 	            var args = [];
 	            
-	            while(parent.tokenType(oq.last()) != 'lparen') {
+	            while(parent.tokenType(oq.last()) != 'left_paren') {
 	            	args.unshift(oq.pop());
 	            }
 
@@ -840,7 +840,7 @@ module.exports = function() {
 	        if (typ == 'alphanum') {
 	        	 oq.push(tok);
 
-	        } else if (typ == 'lparen') {
+	        } else if (typ == 'left_paren') {
 	            
 	            if (this.tokenType(prev) != 'alphanum') { 
 	            	oq.push('id');
@@ -851,9 +851,9 @@ module.exports = function() {
 	            oq.push(stack.pop());
 	            stack.push(tok);
 
-	        } else if (typ == 'rparen') {
+	        } else if (typ == 'right_paren') {
 
-	        	while (stack.length && this.tokenType(stack.last()) != 'lparen') {
+	        	while (stack.length && this.tokenType(stack.last()) != 'left_paren') {
 	        		popstack(stack,oq,this);
 	            }
 
@@ -864,15 +864,15 @@ module.exports = function() {
 	            stack.push(tok);
 				popstack(stack,oq,this);
 
-	        } else if (typ == 'monop' || typ == 'op') {
+	        } else if (typ == 'unary_operation' || typ == 'binary_operation') {
 
-	            if (tok == '-' && ![ 'alphanum', 'rparen' ].contains(this.tokenType(prev))) {
+	            if (tok == '-' && ![ 'alphanum', 'right_paren' ].contains(this.tokenType(prev))) {
 	                oq.push('0');
 	            }
 
 	            prec = precedence[tok];
 
-	            while (stack.length && this.tokenType(stack.last()) == 'op' && precedence[stack.last()] < prec) {
+	            while (stack.length && this.tokenType(stack.last()) == 'binary_operation' && precedence[stack.last()] < prec) {
 	            	popstack(stack,oq,this);
 	            }
 
@@ -880,7 +880,7 @@ module.exports = function() {
 
 	        } else if (typ == 'comma') {
 
-	            while (stack.length && stack.last() != 'lparen') {
+	            while (stack.length && stack.last() != 'left_paren') {
 	            	popstack(stack,oq,this);
 	            }
 
@@ -896,8 +896,7 @@ module.exports = function() {
 	    if (oq.length == 1) {
 	        return oq[0];
 	    } else {
-	    	console.log("!trace <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< multi: ",oq);
-	        return [ 'multi', oq ];
+	    	return new Error("Wrong number of items left on stack. !trace");
 	    }
 
 	}
