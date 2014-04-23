@@ -171,7 +171,9 @@ module.exports = function(parser,compiler,preprocessor,restserver,constants) {
 	this.compileIt = function(callback) {
 
 		parser.parSecInitialize(preprocessor.processed_file,preprocessor.stringers);
-		var asm = compiler.assemble(compiler.compile_stmt(parser.ast));
+		console.log("!trace THE PARSER AST ----> %j", parser.ast);
+		// console.log(compiler);
+		var asm = compiler.assemble(compiler.compile_expr(parser.ast));
 		this.printOutput(asm);
 		callback();
 
