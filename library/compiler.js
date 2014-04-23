@@ -153,17 +153,6 @@ for o in opcodes:
 		['suicide', 1, 0, ['<0>', 'SUICIDE']],
 	]
 
-	var funtable = {
-		'sha256': ['SHA256', 3],
-		'sha3': ['SHA3', 3],
-		'ripemd160': ['RIPEMD160', 3],
-		'ecsign': ['ECSIGN', 2],
-		'ecrecover': ['ECRECOVER', 4],
-		'ecvalid': ['ECVALID', 2],
-		'ecadd': ['ECADD', 4],
-		'ecmul': ['ECMUL', 3],
-	};
-
 	//  Pseudo-variables representing opcodes
 	var pseudovars = {
 		'msg.datasize': [32, 'CALLDATASIZE', 'DIV'],
@@ -232,7 +221,7 @@ for o in opcodes:
 	}
 
 	this.is_numberlike = function(b) {
-		if (isinstance(b, (str, unicode))) {
+		if (typeof b === 'string') {
 			re_number = /^[0-9\-]*$/;
 			if (re_number.match(b)) {
 				return true;
@@ -252,13 +241,13 @@ for o in opcodes:
 
 	this.numberize = function(b) {
 		if (b[0] in ["'", '"']) {
-			return frombytes(b.substring(1,b.length-1));
+			return this.frombytes(b.substring(1,b.length-1));
 		
 		} else if (b.substring(0,2) == '0x') {
-			return fromhex(b.substring(2,b.length));
+			return this.fromhex(b.substring(2,b.length));
 		
 		} else {
-			return int(b);
+			return parseInt(b);
 		
 		}
 	}
@@ -772,7 +761,7 @@ for o in opcodes:
 			console.log("!trace ast: %j ", ast);
 			console.log("this.varhash: %j ", this.varhash);
 			// console.log("functionhash: %j ", functionhash);
-			console.log("lc: %j ", this.labelcollection);
+			// console.log("lc: %j ", this.labelcollection);
 			// console.log("this.endifmarker: %j ", this.endifmarker);
 			// console.log("this.endifknown: %j ", this.endifknown);
 			// console.log("statement! %j", ast);
@@ -782,11 +771,17 @@ for o in opcodes:
 		// Literals
 		} else if (typeof ast === 'string') { 
 
+			// Is it number like?
 			if (this.is_numberlike(ast)) {
 				return [this.numberize(ast)];
-			} else if (pseudovars.contains(ast)) {
+
+			// Is it a psuedovar?
+			} else if (pseudovars.isset(ast)) {
 				return pseudovars[ast];
+
+			// Then it's gotta be a variable, right?
 			} else {
+				
 				if (!this.varhash.isset(ast)) {
 					this.varhash[ast] = len(this.varhash) * 32
 				}
@@ -803,7 +798,9 @@ for o in opcodes:
 				return new Error("Cannot set a pseudovariable!");
 
 			} else {
-				if (!this.varhash.contains(ast[1])) { 
+
+				// console.log("!trace referencing var:  ",ast[1]);
+				if (!this.varhash.isset(ast[1])) { 
 					this.varhash[ast[1]] = this.varhash.hashlength() * 32;
 				}
 
@@ -952,15 +949,6 @@ for o in opcodes:
 
 			return o;
 
-		} else if (ast[0] == 'fun' && ast[1] == 'mktx') {
-			
-			var to = this.compile_expr(ast[2]);
-			var value = this.compile_expr(ast[3]);
-			var datan = this.compile_expr(ast[4]);
-			var datastart = this.compile_expr(ast[5]);
-
-			return datastart.concat(datan,value,to,[ 'MKTX' ]);
-
 		} else if (ast[0] == 'fun' &&  functionhash.isset(ast[1])) {
 
 			// It's a bare function. Which looks like a statement, compile it as an expression.
@@ -971,29 +959,56 @@ for o in opcodes:
 			return this.compile_expr(ast[1]);
 		}
 
-
-		for (funidx = 0; funidx < funtable.length; funidx++) {
+		console.log("!trace ------>------>------>------> function tracer");
+		console.log("!trace ast: ",ast);
+		
+		for (var funidx = 0; funidx < funtable.length; funidx++) {
 			var f = funtable[funidx];
+			
 			if (ast[0] == f[0] && (ast.length-1) == f[1]) {
-
+			
 				var sliceast = ast.slice(1,ast.length);
 				var reduction = sliceast.reduce(function(x, y) {
 					return x * this.arity(y);
 				}.bind(this),1);
+
+				// console.log("!trace reduction: ",reduction);
 
 				if (reduction) {
 
 					var iq = f[3]; // f[3][:]
 					var oq = [];
 					while (iq.length) {
-						tok = iq.pop(0);
+
+						console.log("!trace iq: ",iq);
+						console.log("!trace oq: ",oq);
+
+						var tok = iq.shift();
+						// console.log("!trace type typof",(typeof tok));
+						// console.log("!trace tok substr 1: ",tok.substring(0,1));
+						// console.log("!trace tok substr 2: ",tok.last());
+
 						if ((typeof tok === 'string') && tok.substring(0,1) == '<' && tok.last() == '>') {
+
 							// !bang originally oq.extend.
-							oq.concat(this.compile_expr(ast[1 + parseInt(tok.substring(1,tok.length-1))]));
+							var toksub = parseInt(tok.substring(1,tok.length-1));
+							var eachast = ast[1 + toksub];
+							var compileres = this.compile_expr(eachast);
+							
+							// console.log("!trace toksub > ",toksub);
+							// console.log("!trace eachast > ",eachast);
+							// console.log("!trace compileres > ",compileres);
+
+							oq.concat(compileres);
+
+							// compile_expr(ast[1 + int(tok[1:-1])], varhash, lc)
+
 						} else {
 							// !bang originally oq.append.
+							// console.log("!trace pushed token >>>> ",tok);
 							oq.push(tok);
 						}
+
 					}
 					return oq;
 

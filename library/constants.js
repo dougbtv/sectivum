@@ -41,7 +41,7 @@ Array.prototype.last = function() {
 }
 
 String.prototype.last = function() {
-    return this.substring(this.length - 1,1);
+    return this.substring(this.length-1);
 }
 
 String.prototype.first = function() {
