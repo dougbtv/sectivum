@@ -68,13 +68,6 @@ module.exports = function() {
 		reverse_opcodes[instruction] = eachkey;
 	}
 
-	/*
-reverse_opcodes = {}
-for o in opcodes:
-	reverse_opcodes[opcodes[o][0]] = o
-	*/
-
-
 	// All functions go here
 	// 
 	// Entries go in a format:
@@ -240,7 +233,9 @@ for o in opcodes:
 	}
 
 	this.numberize = function(b) {
-		if (b[0] in ["'", '"']) {
+		
+		if (["'", '"'].contains(b[0])) {
+			// !banger !untested
 			return this.frombytes(b.substring(1,b.length-1));
 		
 		} else if (b.substring(0,2) == '0x') {
@@ -333,6 +328,8 @@ for o in opcodes:
 
 	this.assemble = function(compiled) {
 
+		console.log("!trace COMPILED --> ",compiled);
+
 		var iq = compiled.clone();
 		var mq = [];
 		var pos = 0;
@@ -364,10 +361,19 @@ for o in opcodes:
 			var m = mq[idx];
 
 			if (typeof m === 'string' && m.substring(0,4) == 'REF_') {
-			
-				oq.push('PUSH');
+
+				oq.push('PUSH4');
 				oq.push(labelmap[m.substring(4,m.length)]);
 			
+			} else if (typeof m === 'number') {
+
+				// !bang -- tested?
+				console.log("!trace -- assembly log256");
+				var L = Math.max(1,this.log256(m));
+				console.log("!trace THE BIG L: ",L);
+				oq.push('PUSH' + parseInt(L));
+				oq.push(this.tobytearr(m,L));
+
 			} else {
 
 				oq.push(m);
@@ -380,6 +386,27 @@ for o in opcodes:
 
 
 	}
+	
+	this.log256 = function(n) {
+		if (n == 0) {
+			return 0;
+		} else {
+			return 1 + this.log256(Math.floor(n / 256));
+		}
+    	// return 0 if n == 0 else 1 + log256(n / 256)
+    }
+
+
+	this.tobytearr = function(n, L) {
+		if (L == 0) {
+			return [];
+		} else {
+			return this.tobytearr(n / 256, L - 1).concat(n % 256);
+		}
+    	// return [] if L == 0 else tobytearr(n / 256, L - 1) + [n % 256]
+    }
+
+
 
 	this.get_left_expr_type = function(expr) {
 
@@ -773,7 +800,8 @@ for o in opcodes:
 
 			// Is it number like?
 			if (this.is_numberlike(ast)) {
-				return [this.numberize(ast)];
+				var numbered = this.numberize(ast);
+				return [numbered];
 
 			// Is it a psuedovar?
 			} else if (pseudovars.isset(ast)) {
@@ -848,6 +876,8 @@ for o in opcodes:
 			var couldbeendif = this.labelcollection[0];
 			this.labelcollection[0] += 1;
 
+			console.log("!trace IF FOUND RETURNED ------::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::------");
+
 			if (ast[0] == "else") {
 				
 				return g.concat([label]);
@@ -866,9 +896,9 @@ for o in opcodes:
 				}
 
 				if (h) {
-					return f.concat( [ 'NOT', ref, 'SWAP', 'JMPI' ] , g , [ 'REF_' + this.endifmarker[0], 'JMP' ] , [ label ] , h );
+					return f.concat( [ 'NOT', ref, 'JUMPI' ] , g , [ 'REF_' + this.endifmarker[0], 'JUMP' ] , [ label ] , h );
 				} else {
-					return f.concat( [ 'NOT', ref, 'SWAP', 'JMPI' ] , g , [ label ] );
+					return f.concat( [ 'NOT', ref, 'JUMPI' ] , g , [ label ] );
 				}
 
 			}
@@ -916,7 +946,7 @@ for o in opcodes:
 				functionhash[funcname]['params'].push(param);
 			}
 			
-			return [ ref, 'JMP', insidelabel ].concat(f , [ 'PUSH', this.varhash[funcname + '_returnpoint'], 'MLOAD', 'JMP'] , [ label ] );
+			return [ ref, 'JUMP', insidelabel ].concat(f , [ 'PUSH', this.varhash[funcname + '_returnpoint'], 'MLOAD', 'JUMP'] , [ label ] );
 
 		} else if (ast[0] == 'while') {
 
@@ -931,7 +961,7 @@ for o in opcodes:
 
 			this.labelcollection[0] += 2;
 
-			return [ beglab ].concat(f , [ 'NOT', endref, 'SWAP', 'JMPI' ] , g , [ begref, 'JMP', endlab ] );
+			return [ beglab ].concat(f , [ 'NOT', endref, 'JUMP' ] , g , [ begref, 'JUMP', endlab ] );
 
 		}  else if (ast[0] == 'seq') {
 
@@ -999,7 +1029,7 @@ for o in opcodes:
 							// console.log("!trace eachast > ",eachast);
 							// console.log("!trace compileres > ",compileres);
 
-							oq.concat(compileres);
+							oq = oq.concat(compileres);
 
 							// compile_expr(ast[1 + int(tok[1:-1])], varhash, lc)
 
