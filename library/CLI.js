@@ -186,6 +186,8 @@ module.exports = function(parser,compiler,preprocessor,restserver,constants) {
 			output += asm[j] + " ";
 		}
 
+		// console.log("Raw ASM: %j\n\n",asm);
+
 		console.log("Output: %s \n\n",output);
 
 

@@ -367,12 +367,10 @@ module.exports = function() {
 			
 			} else if (typeof m === 'number') {
 
-				// !bang -- tested?
-				console.log("!trace -- assembly log256");
+				// !bang -- testing in progress.
 				var L = Math.max(1,this.log256(m));
-				console.log("!trace THE BIG L: ",L);
-				oq.push('PUSH' + parseInt(L));
-				oq.push(this.tobytearr(m,L));
+				oq = oq.concat('PUSH' + parseInt(L));
+				oq = oq.concat(this.tobytearr(m,L));
 
 			} else {
 
