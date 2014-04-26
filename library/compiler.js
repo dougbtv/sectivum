@@ -277,9 +277,10 @@ module.exports = function() {
 
 
 	// Apply rewrite rules
+	// !bang (untraced.)
 	this.rewrite = function(ast) {
-										// !bang -- warning.
-		if (typeof ast === 'string') { // isinstance(ast, (str, unicode))) {
+										
+		if (typeof ast === 'string') {
 			return ast;
 
 		} else if (ast[0] == 'set') {
@@ -328,8 +329,6 @@ module.exports = function() {
 
 	this.assemble = function(compiled) {
 
-		console.log("!trace COMPILED --> ",compiled);
-
 		var iq = compiled.clone();
 		var mq = [];
 		var pos = 0;
@@ -367,7 +366,6 @@ module.exports = function() {
 			
 			} else if (typeof m === 'number') {
 
-				// !bang -- testing in progress.
 				var L = Math.max(1,this.log256(m));
 				oq = oq.concat('PUSH' + parseInt(L));
 				oq = oq.concat(this.tobytearr(m,L));
@@ -418,378 +416,19 @@ module.exports = function() {
 
 	}
 
-	/* 
-	this.compile_expr = function(ast, varhash, lc=[0]) {
-		// Stop keyword
-		if (ast == 'stop') {
-			return ['STOP'];
-		// Literals
-		} else if (isinstance(ast, (str, unicode))) {
-			if (this.is_numberlike(ast)) {
-				return [this.numberize(ast)];
-			} else if (pseudovars.contains(ast)) {
-				return pseudovars[ast];
-			} else {
-				if (!varhash.contains(ast)) {
-					varhash[ast] = len(varhash) * 32
-				}
-				return [varhash[ast], 'MLOAD'];
-			}
-		// Set (specifically, variables)
-		} else if (ast[0] == 'set') {
-			if (not isinstance(ast[1], (str, unicode))) {
-				raise Exception("Cannot set the value of " + str(ast[1]))
-			} else if (ast[1] in pseudovars) {
-				raise Exception("Cannot set a pseudovariable!")
-			} else {
-				if (ast[1] not in varhash) {
-					varhash[ast[1]] = len(varhash) * 32
-				return compile_expr(ast[2], varhash, lc) + [varhash[ast[1]], 'MSTORE'];
-		// if (and if/else statement) {
-		} else if (ast[0] == 'if') {
-			f = compile_expr(ast[1], varhash, lc)
-			g = compile_expr(ast[2], varhash, lc)
-			h = compile_expr(ast[3], varhash, lc) if (len(ast) > 3 else Non) {
-			label, ref = 'LABEL_' + str(lc[0]), 'REF_' + str(lc[0])
-			lc[0] += 1
-			label2, ref2 = 'LABEL_' + str(lc[0]), 'REF_' + str(lc[0])
-			lc[0] += 1
-			if (h) {
-				return f + ['NOT', ref2, 'JUMPI'] + g + [ref, 'JUMP', label2] + h + [label];
-			} else {
-				return f + ['NOT', ref, 'JUMPI'] + g + [label];
-		// While loops
-		} else if (ast[0] == 'while') {
-			f = compile_expr(ast[1], varhash, lc)
-			g = compile_expr(ast[2], varhash, lc)
-			beglab, begref = 'LABEL_' + str(lc[0]), 'REF_' + str(lc[0])
-			endlab, endref = 'LABEL_' + str(lc[0] + 1), 'REF_' + str(lc[0] + 1)
-			lc[0] += 2
-			return [beglab] + f + ['NOT', endref, 'JUMPI'] + g + [begref, 'JUMP', endlab];
-		// Seq
-		} else if (ast[0] == 'seq') {
-			o = []
-			for arg in ast[1:]:
-				o.extend(compile_expr(arg, varhash, lc))
-				if (arity(arg) == 1 and arg != ast[-1]) {
-					o.append('POP')
-			return o;
-		// Functions and operations
-		for f in funtable:
-			if (ast[0] == f[0] and len(ast[1:]) == f[1]) {
-				// if (arity of all args is ) {
-				if (reduce(lambda x, y: x * arity(y), ast[1:], 1)) {
-					iq = f[3][:]
-					oq = []
-					while len(iq):
-						tok = iq.pop(0)
-						if (isinstance(tok, (str, unicode)) and tok[0] == '<' and tok[-1] == '>') {
-							oq.extend(
-								compile_expr(ast[1 + int(tok[1:-1])], varhash, lc))
-						} else {
-							oq.append(tok)
-					return oq;
-				} else {
-					raise Exception(
-						"Arity of argument mismatches for %s: %s" % (f[0], ast))
-		raise Exception("invalid op: " + ast[0])
-
-	}
-
-	/*
-
-	def compile_expr(ast, varhash, lc=[0]):
-	// Stop keyword
-	if (ast == 'stop') {
-		return ['STOP']
-	# Literals
-	} else if isinstance(ast, (str, unicode)):
-		if is_numberlike(ast):
-			return [numberize(ast)]
-		elif ast in pseudovars:
-			return pseudovars[ast]
-		else:
-			if ast not in varhash:
-				varhash[ast] = len(varhash) * 32
-			return [varhash[ast], 'MLOAD']
-	# Set (specifically, variables)
-	elif ast[0] == 'set':
-		if not isinstance(ast[1], (str, unicode)):
-			raise Exception("Cannot set the value of " + str(ast[1]))
-		elif ast[1] in pseudovars:
-			raise Exception("Cannot set a pseudovariable!")
-		else:
-			if ast[1] not in varhash:
-				varhash[ast[1]] = len(varhash) * 32
-			return compile_expr(ast[2], varhash, lc) + [varhash[ast[1]], 'MSTORE']
-	# If and if/else statements
-	elif ast[0] == 'if':
-		f = compile_expr(ast[1], varhash, lc)
-		g = compile_expr(ast[2], varhash, lc)
-		h = compile_expr(ast[3], varhash, lc) if len(ast) > 3 else None
-		label, ref = 'LABEL_' + str(lc[0]), 'REF_' + str(lc[0])
-		lc[0] += 1
-		label2, ref2 = 'LABEL_' + str(lc[0]), 'REF_' + str(lc[0])
-		lc[0] += 1
-		if h:
-			return f + ['NOT', ref2, 'JUMPI'] + g + [ref, 'JUMP', label2] + h + [label]
-		else:
-			return f + ['NOT', ref, 'JUMPI'] + g + [label]
-	# While loops
-	elif ast[0] == 'while':
-		f = compile_expr(ast[1], varhash, lc)
-		g = compile_expr(ast[2], varhash, lc)
-		beglab, begref = 'LABEL_' + str(lc[0]), 'REF_' + str(lc[0])
-		endlab, endref = 'LABEL_' + str(lc[0] + 1), 'REF_' + str(lc[0] + 1)
-		lc[0] += 2
-		return [beglab] + f + ['NOT', endref, 'JUMPI'] + g + [begref, 'JUMP', endlab]
-	# Seq
-	elif ast[0] == 'seq':
-		o = []
-		for arg in ast[1:]:
-			o.extend(compile_expr(arg, varhash, lc))
-			if arity(arg) == 1 and arg != ast[-1]:
-				o.append('POP')
-		return o
-	# Functions and operations
-	for f in funtable:
-		if ast[0] == f[0] and len(ast[1:]) == f[1]:
-			# If arity of all args is 1
-			if reduce(lambda x, y: x * arity(y), ast[1:], 1):
-				iq = f[3][:]
-				oq = []
-				while len(iq):
-					tok = iq.pop(0)
-					if isinstance(tok, (str, unicode)) and tok[0] == '<' and tok[-1] == '>':
-						oq.extend(
-							compile_expr(ast[1 + int(tok[1:-1])], varhash, lc))
-					else:
-						oq.append(tok)
-				return oq
-			else:
-				raise Exception(
-					"Arity of argument mismatches for %s: %s" % (f[0], ast))
-	raise Exception("invalid op: " + ast[0])
-
-	*/
-
-
-	/*
-
-	// Right-hand-side expressions (ie. the normal kind)
-	this.compile_expr = function(expr) {
-
-		if (typeof expr === 'string') {
-		
-			re_expr = /^[0-9\-]*$/;
-			re_ref = /^REF_/;
-			if (re_expr.match(expr)) {
-				return ['PUSH',parseInt(expr)];
-			
-			} else if (re_ref.match(expr)) {
-				return [expr];
-			
-			} else if (this.varhash.isset(expr)) {
-
-				return ['PUSH',this.varhash[expr],'MLOAD'];
-			
-			} else if (pseudovars[expr]) {
-				return [pseudovars[expr]];
-			
-			} else {
-				var hashlen = this.varhash.hashlength();
-				this.varhash[expr] = hashlen;
-				return ['PUSH',this.varhash[expr],'MLOAD'];
-			}
-		
-		} else if (optable[expr[0]]) {
-		
-			if (expr.length != 3) {
-				throw "Wrong number of arguments: " + expr;
-			}
-
-			var f = this.compile_expr(expr[1]);
-			var g = this.compile_expr(expr[2]);
-
-			return g.concat(f,[optable[expr[0]]]);
-		
-		} else if (expr[0] == 'fun' && expr[1] in funtable) {
-		
-			if (expr.length != funtable[expr[1]][1] + 2) {
-				throw "Wrong number of arguments: " + expr;
-			}
-
-			var f = [];
-			var astslice = expr.slice(2,expr.length);
-			for (var astindex = 0; astindex < astslice.length; astindex++) {
-				var e = astslice[astindex];
-				var nowexpression = this.compile_expr(e);
-				f = f.concat(nowexpression);
-			}
-
-			return f.concat([funtable[expr[1]][0]]);
-		
-		} else if (expr[0] == 'access') {
-		
-			if (expr[1][0] == 'block.contract_storage') {
-				return compile_expr(expr[2]).concat(compile_expr(expr[1][1]),['EXTRO']);
-			
-			} else if (expr[1] in pseudoarrays) {
-				return compile_expr(expr[2]).concat([pseudoarrays[expr[1]]]);
-			
-			} else {
-				return compile_left_expr(expr[1]).concat(compile_expr(expr[2]),['ADD','MLOAD']);
-
-			}
-		
-		} else if (expr[0] == 'fun' && expr[1] == 'array') {
-		
-			// !bang wtf is this anyways.... looks like an unfinished idea, it's static.
-
-			return [ 'PUSH', 0, 'PUSH', 1, 'SUB', 'MLOAD', 'PUSH',
-							 2, 'PUSH', 160, 'EXP', 'ADD', 'DUP',
-							 'PUSH', 0, 'PUSH', 1, 'SUB', 'MSTORE' ];
-		
-		} else if (expr[0] == 'fun') {
-		
-			// That's a custom function.
-			if (!functionhash[expr[1]]) {
-				throw "function not defined: "+expr[1];
-			}
-
-			// Setup our return point.
-			label = 'LABEL_' + this.labelcollection[0];
-			ref = 'REF_' + this.labelcollection[0];
-			this.labelcollection[0] += 1;
-
-			// Save that in the variable reserved for this function.
-			var ast_setfuncreturnvar = ['set',expr[1] + "_returnpoint",ref];
-			var ast_functionreturn = this.compile_expr(ast_setfuncreturnvar);
-			
-			// Set each variable which represents a parameter for the function.
-			var params = []
-			var paramidx = -1
-			
-			slicexpr = expr.slice(2,expr.length);
-			for (var expridx = 0; expridx < slicexpr.length; expridx++) { // for ex in expr[2:]:
-
-				var ex = slicexpr[expridx];
-				
-				paramidx += 1;
-
-				var setparamast = ['set',functionhash[expr[1]]['params'][paramidx],ex];
-
-				// reference: for part in this.compile_expr(setparamast,functionhash,lc): params.append(part)
-				var parts = this.compile_expr(setparamast);
-				for (var partidx = 0; partidx < parts.length; partidx++) {
-					params.push(parts[partidx]);
-				}
-
-				
-			}
-			
-			// Steps: Set function return variable, Set parameters, Go to the function, Set the label
-			return ast_functionreturn.concat(params,[ functionhash[expr[1]]['funcref'], 'JMP' ],[ label ]);
-		
-		} else if (expr[0] == '!') {
-		
-			var f = this.compile_expr(expr[1]);
-			return f.concat(['NOT']);
-		
-		} else if (expr[0] in pseudoarrays) {
-		
-			return this.compile_expr(expr[1]).concat(pseudoarrays[expr[0]]);
-		
-		} else if (expr[0] in ['or', '||']) {
-		
-			// !untested
-			return this.compile_expr(['!', [ '*', ['!', expr[1] ], ['!', expr[2] ] ] ]);
-		
-		} else if (expr[0] in ['and', '&&']) {
-		
-			// !untested
-			return this.compile_expr(['!', [ '+', ['!', expr[1] ], ['!', expr[2] ] ] ]);
-		
-		} else if (expr[0] == 'multi') {
-		
-			var f = [];
-			var astslice = expr.slice(1,expr.length);
-			for (var astindex = 0; astindex < astslice.length; astindex++) {
-				var e = astslice[astindex];
-				var nowexpression = this.compile_expr(e);
-				f = f.concat(nowexpression);
-			}
-
-			return f;
-		
-		} else if (expr == 'tx.datan') {
-		
-			return ['DATAN'];
-		
-		} else {
-		
-			throw "invalid op: " +expr[0];
-		
-		}
-
-	}
-
-	*/
-
-	/*
-
-	this.compile_left_expr = function(expr) {
-
-		typ = this.get_left_expr_type(expr);
-
-		if (typ == 'variable') {
-		
-			var re_expr = /^[0-9\-]*$/;
-			if (re_expr.match(expr)) {
-				throw "Can't set the value of a number! "+expr;
-
-			} else if (this.varhash.isset(expr)) {
-
-				return ['PUSH',this.varhash[expr]];
-			
-			} else {
-			
-				this.varhash[expr] = this.varhash.hashlength();
-				return ['PUSH',this.varhash[expr]];
-
-			}
-		
-		} else if (typ == 'storage') {
-		
-			return this.compile_expr(expr[2]);
-		
-		} else if (typ == 'access') {
-		
-			if (this.get_left_expr_type(expr[1]) == 'storage') {
-				return this.compile_left_expr(expr[1]).concat(['SLOAD'],this.compile_expr(expr[2]));
-			} else {
-				return this.compile_left_expr(expr[1]).concat(this.compile_expr(expr[2]),['ADD']);
-			}
-		
-		} else {
-			throw "invalid op: " + expr[0];
-		}
-
-	}
-
-	*/
-
 	this.compile_expr = function(ast) {
 
+
+		/*
 			// handy ole debug methods.
-			console.log("!trace -------------------------------------- detent");
-			console.log("!trace ast: %j ", ast);
+			console.log("ast: %j ", ast);
 			console.log("this.varhash: %j ", this.varhash);
 			// console.log("functionhash: %j ", functionhash);
 			// console.log("lc: %j ", this.labelcollection);
 			// console.log("this.endifmarker: %j ", this.endifmarker);
 			// console.log("this.endifknown: %j ", this.endifknown);
 			// console.log("statement! %j", ast);
+		*/
 		
 		if (ast == 'stop') {
 			return ['STOP'];
@@ -825,16 +464,13 @@ module.exports = function() {
 
 			} else {
 
-				// console.log("!trace referencing var:  ",ast[1]);
 				if (!this.varhash.isset(ast[1])) { 
 					this.varhash[ast[1]] = this.varhash.hashlength() * 32;
 				}
 
 				var retval = this.compile_expr(ast[2]);
 				return retval.concat([this.varhash[ast[1]], 'MSTORE']);
-				// !bang array addition.
-				// return this.compile_expr(ast[2], varhash, lc) + [varhash[ast[1]], 'MSTORE'];
-
+				
 			}
 
 		} else if (['if', 'elif', 'else'].contains(ast[0])) {
@@ -873,8 +509,6 @@ module.exports = function() {
 			// We hold the lc's place, as if the end if location is unknown this "could be end if"
 			var couldbeendif = this.labelcollection[0];
 			this.labelcollection[0] += 1;
-
-			console.log("!trace IF FOUND RETURNED ------::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::------");
 
 			if (ast[0] == "else") {
 				
@@ -987,9 +621,6 @@ module.exports = function() {
 			return this.compile_expr(ast[1]);
 		}
 
-		console.log("!trace ------>------>------>------> function tracer");
-		console.log("!trace ast: ",ast);
-		
 		for (var funidx = 0; funidx < funtable.length; funidx++) {
 			var f = funtable[funidx];
 			
@@ -1000,40 +631,25 @@ module.exports = function() {
 					return x * this.arity(y);
 				}.bind(this),1);
 
-				// console.log("!trace reduction: ",reduction);
-
 				if (reduction) {
 
 					var iq = f[3]; // f[3][:]
 					var oq = [];
 					while (iq.length) {
 
-						console.log("!trace iq: ",iq);
-						console.log("!trace oq: ",oq);
-
 						var tok = iq.shift();
-						// console.log("!trace type typof",(typeof tok));
-						// console.log("!trace tok substr 1: ",tok.substring(0,1));
-						// console.log("!trace tok substr 2: ",tok.last());
-
+						
 						if ((typeof tok === 'string') && tok.substring(0,1) == '<' && tok.last() == '>') {
 
-							// !bang originally oq.extend.
 							var toksub = parseInt(tok.substring(1,tok.length-1));
 							var eachast = ast[1 + toksub];
 							var compileres = this.compile_expr(eachast);
 							
-							// console.log("!trace toksub > ",toksub);
-							// console.log("!trace eachast > ",eachast);
-							// console.log("!trace compileres > ",compileres);
-
 							oq = oq.concat(compileres);
 
 							// compile_expr(ast[1 + int(tok[1:-1])], varhash, lc)
 
 						} else {
-							// !bang originally oq.append.
-							// console.log("!trace pushed token >>>> ",tok);
 							oq.push(tok);
 						}
 
