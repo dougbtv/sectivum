@@ -339,19 +339,24 @@ module.exports = function() {
 			var front = iq.shift();
 
 			if (typeof front === 'string' && front.substring(0,6) == 'LABEL_') {
+
 				labelmap[front.substring(6,front.length)] = pos;
+
 			} else {
 
 				mq.push(front);
 
 				if (typeof front === 'string' && front.substring(0,4) == 'REF_') {
-					pos += 2;
+					pos += 5;
+				} else if (typeof front === 'number') {
+
+					pos += 1 + Math.max(1,this.log256(front));
+
 				} else {
 					pos += 1;
 				}
 			}
 		}
-
 
 		var oq = [];
 
@@ -362,13 +367,15 @@ module.exports = function() {
 			if (typeof m === 'string' && m.substring(0,4) == 'REF_') {
 
 				oq.push('PUSH4');
-				oq.push(labelmap[m.substring(4,m.length)]);
+				oq = oq.concat(this.tobytearr(labelmap[m.substring(4,m.length)],4));
 			
 			} else if (typeof m === 'number') {
 
 				var L = Math.max(1,this.log256(m));
 				oq = oq.concat('PUSH' + parseInt(L));
 				oq = oq.concat(this.tobytearr(m,L));
+
+
 
 			} else {
 
@@ -397,7 +404,7 @@ module.exports = function() {
 		if (L == 0) {
 			return [];
 		} else {
-			return this.tobytearr(n / 256, L - 1).concat(n % 256);
+			return this.tobytearr(Math.floor(n / 256), L - 1).concat(n % 256);
 		}
     	// return [] if L == 0 else tobytearr(n / 256, L - 1) + [n % 256]
     }
