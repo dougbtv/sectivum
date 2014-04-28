@@ -16,8 +16,8 @@ module.exports = function(parser,compiler,preprocessor,restserver,constants) {
 		   })
 		   .option('string', {
 			  abbr: 'str',
-			  metavar: 'STRING',
-			  help: 'Compile a string'
+			  metavar: '"STRING"',
+			  help: 'Compile from a string'
 		   })
 		   .option('cli', {
 		   	  abbr: 'c',
@@ -27,7 +27,7 @@ module.exports = function(parser,compiler,preprocessor,restserver,constants) {
 		   .option('server', {
 		   	  abbr: 's',
 			  flag: true,
-			  help: 'start CLI'
+			  help: 'start server for RESTful API'
 		   })
 		   .parse();
 

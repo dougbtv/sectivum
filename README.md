@@ -1,7 +1,7 @@
 Sectivum
 ---
 
-A Perl-inspired language for Ethereum. With a hint of inspiration from c++. 
+A Perl-inspired language for writing Ethereum contracts. With a hint of inspiration from c++. 
 
 <sub>(*Pssst, It compiles Serpent [aka CLL], too*)</sub>
 
@@ -9,9 +9,11 @@ A Perl-inspired language for Ethereum. With a hint of inspiration from c++.
 
 **Try It Out!**
 
-You can give it a try @ http://sectivum.io/
+You can give it a try @ https://sectivum.io/
 
 Just hit the "compile" tab, and you'll have options to compile from there, without having to install the whole application.
+
+As of this update, it's PoC-4 compatible.
 
 ----
 
@@ -29,9 +31,10 @@ Need some help? Check out the [Node.JS site](http://nodejs.org/), or you might b
     git clone https://github.com/dougbtv/sectivum.git
     npm install
 
+
 ----
 
-**Usage**
+**Usage at the command line**
 
 To compile from a source file:
 
@@ -51,14 +54,29 @@ You can quit the command line by issuing a `quit` (or `exit`) command.
 
 You can get some help by running with the `--help` flag:
 
-    [doug@localhost sectivum]$ node sectivum.js --help
-    
+    [user@host sectivum]$ node sectivum.js --help
+
     Usage: node sectivum.js [options]
-    
+
     Options:
-        -f FILE, --file FILE         Compile given file
-        -s STRING, --string STRING   Compile a string
-        -c, --cli                    start CLI
+       -f FILE, --file FILE               Compile given file
+       -str "STRING", --string "STRING"   Compile from a string
+       -c, --cli                          start CLI
+       -s, --server                       start server for RESTful API
+
+----
+
+**Usage via web application**
+
+Check out the `docs/*.config` files for both an nginx & apache configuration for running the web server. 
+
+When you're ready just issue:
+
+    node sectivum.js --server
+
+May I suggest also using [forever](https://github.com/nodejitsu/forever)? It's a great way to keep a node app up and running.
+
+* More docs on the way for setting up running your instance of the web application, and also complete docs for making requests to the RESTful API.
 
 ----
 
@@ -103,10 +121,9 @@ As you can see, you can set a constant, so you can clean up some magic numbers f
 
 **Coming soon**
 
-- PoC4 Compatibility (Started with a PoC3 compatible reference)
-- Better defining of functions (broken right now)
-- REST API for compilation
-- Web app for compilation
+- Better defining of functions (broken right now, but it's ready)
+- Creating richer data structures using contract storage
+- Better docs for the web app features.
 
 ----
 
