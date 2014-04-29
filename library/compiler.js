@@ -278,9 +278,9 @@ module.exports = function() {
 
 
 	// Apply rewrite rules
-	// !bang (untraced.)
+	// !bang (only partially traced)
 	this.rewrite = function(ast) {
-										
+
 		if (typeof ast === 'string') {
 			return ast;
 
@@ -320,15 +320,31 @@ module.exports = function() {
 		// return map(this.rewrite, ast);
 
 		var returner = [];
-		for (var mapidx; mapidx < ast.length; mapidx++) {
+		for (var mapidx = 0; mapidx < ast.length; mapidx++) {
 			returner.push(this.rewrite(ast[mapidx]));
 		}
 		return returner;
 		
 	}
 
+	this.compile_to_assembly = function(astinbound) {
 
-	this.assemble = function(compiled) {
+		var rewritten = this.rewrite(astinbound);
+		// console.log("!trace REWRITTEN: %j",rewritten);
+
+		var aevm = this.compile_expr(rewritten);
+		// console.log("!trace BEFORE DEREF: %j",aevm);
+
+		var dereffed = this.dereference(aevm);
+		// console.log("!trace AFTER DEREF: %j",dereffed);
+
+		return dereffed;
+
+
+
+	}
+
+	this.dereference = function(compiled) {
 
 		var iq = compiled.clone();
 		var mq = [];
@@ -465,7 +481,7 @@ module.exports = function() {
 		} else if (ast[0] == 'set') {
 
 			if (!(typeof ast[1] === 'string')) {
-				return new Error("Cannot set the value of " + str(ast[1]));
+				return new Error("Cannot set the value of " + ast[1]);
 
 			} else if (ast[1] in pseudovars) {
 				return new Error("Cannot set a pseudovariable!");

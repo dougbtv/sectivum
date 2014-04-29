@@ -60,7 +60,7 @@ module.exports = function(server,constants,Parser,Compiler,PreProcessor) {
 			} else {
 
 				parser.parSecInitialize(preprocessor.processed_file,preprocessor.stringers);
-				var built_asm = compiler.assemble(compiler.compile_expr(parser.ast));
+				var built_asm = compiler.compile_to_assembly(parser.ast);
 				
 				for (var asmidx = 0; asmidx < built_asm.length; asmidx++) {
 					var each = built_asm[asmidx];
