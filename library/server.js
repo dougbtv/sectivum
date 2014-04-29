@@ -71,11 +71,13 @@ module.exports = function(server,constants,Parser,Compiler,PreProcessor) {
 
 				var asm_text = built_asm.join(" ");
 
+				var hexcode = "code:" + compiler.hexoutput;
 
 				var return_json = {
 
 					asm: built_asm,
 					asm_text: asm_text,
+					hexcode: hexcode
 
 				};
 

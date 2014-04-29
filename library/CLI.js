@@ -171,10 +171,13 @@ module.exports = function(parser,compiler,preprocessor,restserver,constants) {
 	this.compileIt = function(callback) {
 
 		parser.parSecInitialize(preprocessor.processed_file,preprocessor.stringers);
-		
+
 		var asm = compiler.compile_to_assembly(parser.ast);
 
 		this.printOutput(asm);
+
+		console.log("code:%s \n",compiler.hexoutput);
+
 		callback();
 
 	}
@@ -188,7 +191,7 @@ module.exports = function(parser,compiler,preprocessor,restserver,constants) {
 
 		// console.log("Raw ASM: %j\n\n",asm);
 
-		console.log("Output: %s \n\n",output);
+		console.log("Output: %s \n",output);
 
 
 

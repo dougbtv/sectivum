@@ -29,13 +29,14 @@ function sectivumMainController($scope, $location, $http) {
     // Go ahead and compile the input.
     $scope.hitCompile = function() {
 
-    	console.log($scope.formData);
+    	console.log("!trace hit compile",$scope.formData);
     	
     	$http.post('/api/compile', $scope.formData)
 			.success(function(data) {
 				$scope.asm = data.asm;
 				$scope.formData.output = data.asm_text;
-				console.log(data);
+				$scope.formData.hexcode = data.hexcode;
+				console.log("!trace out data",data);
 			})
 			.error(function(data) {
 				console.log('Error: ',data);
@@ -93,7 +94,7 @@ function mainController($scope, $http) {
 	$http.get('/api/foo')
 		.success(function(data) {
 			$scope.todos = data;
-			console.log(data);
+			// console.log(data);
 		})
 		.error(function(data) {
 			console.log('Error: ' + data);

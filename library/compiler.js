@@ -2,6 +2,9 @@
 
 module.exports = function() {
 
+	// Our resulting out put, as a hex string.
+	this.hexoutput = '';
+
 	var opcodes = {
 		0x00: ['STOP', 0, 0],
 		0x01: ['ADD', 2, 1],
@@ -68,6 +71,8 @@ module.exports = function() {
 		var instruction = opcodes[eachkey][0];
 		reverse_opcodes[instruction] = eachkey;
 	}
+
+
 
 	// All functions go here
 	// 
@@ -236,7 +241,7 @@ module.exports = function() {
 	this.numberize = function(b) {
 		
 		if (["'", '"'].contains(b[0])) {
-			// !banger !untested
+			// !bang !untested
 			return this.frombytes(b.substring(1,b.length-1));
 		
 		} else if (b.substring(0,2) == '0x') {
@@ -338,11 +343,87 @@ module.exports = function() {
 		var dereffed = this.dereference(aevm);
 		// console.log("!trace AFTER DEREF: %j",dereffed);
 
+		// Create our code hex.
+		this.hexoutput = this.createCodeHex(dereffed);
+
 		return dereffed;
 
 
 
 	}
+
+	this.createCodeHex = function(sourcearray) {
+
+		var serial = '';
+		var numberized = [];
+		var re_numbermatch = /^[0-9]*$/;
+
+		// Create the numeric value of each instruction
+		// Into a byte-array.
+		for (var sidx = 0; sidx < sourcearray.length; sidx++) {
+
+			var arg = sourcearray[sidx];
+			var number = 0;
+
+			if (typeof arg === 'number') {
+				number = arg;
+
+			} else if (reverse_opcodes.isset(arg)) {
+				number = parseInt(reverse_opcodes[arg]);
+
+			} else if (arg.substring(0,4) == 'PUSH') {
+				number = 95 + parseInt(arg.substring(4,arg.length));
+
+			} else if (re_numbermatch.match(arg)) {
+				number = parseInt(arg);
+
+			} else {
+				console.log("!trace e");
+				return new Error("Cannot serialize: " + arg);
+			}
+
+			numberized.push(number);
+
+		}
+
+		// Now take that byte array and convert it to a hex string.
+		var hexstring = '';
+
+		for (var bidx = 0; bidx < numberized.length; bidx++) {
+			// Convert to hex.
+			var hexed = numberized[bidx].toString(16);
+			// But left-pad zeroes.
+			if (hexed.length < 2) {
+				hexed = "0" + hexed;
+			}
+
+			hexstring += hexed;
+		}
+
+		return hexstring;
+
+	}
+
+	/*
+	
+		def serialize(source):
+	    print "!trace serialized source: ",source,"\n\n"
+	    def numberize(arg):
+	        if isinstance(arg, (int, long)):
+	            return arg
+	        elif arg in reverse_opcodes:
+	            return reverse_opcodes[arg]
+	        elif arg[:4] == 'PUSH':
+	            return 95 + int(arg[4:])
+	        elif re.match('^[0-9]*$', arg):
+	            return int(arg)
+	        else:
+	            raise Exception("Cannot serialize: " + str(arg))
+	    numbered = map(numberize, source)
+	    print "!trace numbered: ", numbered,"\n\n"
+	    return ''.join(map(chr, numbered))
+
+	*/
 
 	this.dereference = function(compiled) {
 
