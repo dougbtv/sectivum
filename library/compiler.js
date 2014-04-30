@@ -131,10 +131,10 @@ module.exports = function() {
 		// MSIZE 0 MSIZE (MSTORE) MSIZE (DUP) MSIZE MSIZE (...) MSIZE MSIZE 32 <4>
 		// <3> <2> <1> <0> (CALL) MSIZE FLAG (POP) MSIZE (MLOAD) RESULT
 		['msg', 5, 1, ['MSIZE', 0, 'MSIZE', 'MSTORE', 'DUP', 32, 'SWAP', '<4>', 32, 'MUL', '<3>',
-					   '<2>', '<1>', '<0>', 'CALL', 'POP', 'MLOAD']],  // to, value, gas, data, datasize -> out32
+					   '<1>', '<0>', '<2>', 'CALL', 'POP', 'MLOAD']],  // to, value, gas, data, datasize -> out32
 		// <5>*32 (MSIZE SWAP MSIZE SWAP) MSIZE MSIZE <5>*32 (DUP MSIZE ADD) MSIZE MSIZE <5>*32 MEND+1 (1 SWAP SUB) MSIZE MSIZE <5>*32 MEND (0 SWAP MSTORE8) MSIZE MSIZE <5>*32 (SWAP) MSIZE <5>*32 MSIZE
 		['msg', 6, 1, ['<5>', 32, 'MUL', 'MSIZE', 'SWAP', 'MSIZE', 'SWAP', 'DUP', 'MSIZE', 'ADD', 1, 'SWAP', 'SUB', 0, 'SWAP', 'MSTORE8', 'SWAP',
-					   '<4>', 32, 'MUL', '<3>', '<2>', '<1>', '<0>', 'CALL', 'POP']],  // to, value, gas, data, datasize, outsize -> out
+					   '<4>', 32, 'MUL', '<3>', '<1>', '<0>', '<2>', 'CALL', 'POP']],  // to, value, gas, data, datasize, outsize -> out
 		// value, gas, data, datasize
 		['create', 4, 1, ['<3>', '<2>', '<1>', '<0>', 'CREATE']],
 		['sha3', 1, 1, [32, 'MSIZE', '<0>', 'MSIZE', 'MSTORE', 'SHA3']],
@@ -296,6 +296,16 @@ module.exports = function() {
 
 	}
 
+	this.preReWrite = function(ast) {
+
+		if (ast[0] != 'init') {
+			return this.rewrite(['init', ['seq'], ast]);
+		} else {
+			return this.rewrite(ast);
+		}
+
+	}
+
 
 	// Apply rewrite rules
 	// !bang (only partially traced)
@@ -307,18 +317,18 @@ module.exports = function() {
 		} else if (ast[0] == 'set') {
 			if (ast[1][0] == 'access') {
 				if (ast[1][1] == 'contract.storage') {
-					return ['sstore', this.rewrite(ast[1][2]), this.rewrite(ast[2])];
+					return ['sstore', this.preReWrite(ast[1][2]), this.preReWrite(ast[2])];
 				} else {
-					return ['arrset', this.rewrite(ast[1][1]), this.rewrite(ast[1][2]), this.rewrite(ast[2])];
+					return ['arrset', this.preReWrite(ast[1][1]), this.preReWrite(ast[1][2]), this.preReWrite(ast[2])];
 				}
 			}
 
 		} else if (ast[0] == 'access') {
 			if (ast[1] == 'msg.data') {
-				return ['calldataload', this.rewrite(ast[2])];
+				return ['calldataload', this.preReWrite(ast[2])];
 
 			} else if (ast[1] == 'contract.storage') {
-				return ['sload', this.rewrite(ast[2])];
+				return ['sload', this.preReWrite(ast[2])];
 
 			}
 
@@ -326,22 +336,22 @@ module.exports = function() {
 			var o = ['array', (ast.length-1).toString()]
 			for (var astidx = 1; astidx < ast.length; astidx++) {
 				var a = ast[astidx];
-				o = ['set_and_inc', this.rewrite(a), o];
+				o = ['set_and_inc', this.preReWrite(a), o];
 			}
 			return ['-', o, ((ast.length-1)*32).toString()];
 
 		} else if (ast[0] == 'return') {
 			if (ast.length == 2 && ast[1][0] == 'array_lit') {
-				return ['return', this.rewrite(ast[1]), (ast[1].length() - 1).toString()];
+				return ['return', this.preReWrite(ast[1]), (ast[1].length() - 1).toString()];
 			}
 		}
 
 		// Apply function to every item of iterable, and return list.
-		// return map(this.rewrite, ast);
+		// return map(this.preReWrite, ast);
 
 		var returner = [];
 		for (var mapidx = 0; mapidx < ast.length; mapidx++) {
-			returner.push(this.rewrite(ast[mapidx]));
+			returner.push(this.preReWrite(ast[mapidx]));
 		}
 		return returner;
 		
@@ -442,6 +452,8 @@ module.exports = function() {
 
 	this.dereference = function(compiled) {
 
+		var label_length = this.log256(c.length*4);
+
 		var iq = compiled.clone();
 		var mq = [];
 		var pos = 0;
@@ -459,11 +471,13 @@ module.exports = function() {
 
 				mq.push(front);
 
-				if (typeof front === 'string' && front.substring(0,4) == 'REF_') {
-					pos += 5;
-				} else if (typeof front === 'number') {
+				if (typeof front === 'number') {
 
 					pos += 1 + Math.max(1,this.log256(front));
+
+				} else if (front.substring(0,4) == 'REF_' || front.substring(0,4) == 'REF_') {
+
+					pos += label_length + 1;
 
 				} else {
 					pos += 1;
@@ -477,12 +491,32 @@ module.exports = function() {
 
 			var m = mq[idx];
 
-			if (typeof m === 'string' && m.substring(0,4) == 'REF_') {
+			if (typeof m === 'number') {
 
-				oq.push('PUSH4');
+				var L = Math.max(1,this.log256(m));
+				oq = oq.concat('PUSH' + parseInt(L));
+				oq = oq.concat(this.tobytearr(m,L));
+
+			} else if (m.substring(0,4) == 'REF_') {
+
+				oq.push('PUSH' + label_length.toString());
 				oq = oq.concat(this.tobytearr(labelmap[m.substring(4,m.length)],4));
 
-			} else if (typeof m === 'string' && m.substring(0,2) == '0x') {
+			} else if (m.substring(0,4) == 'SUB_') {
+
+				oq.push('PUSH' + label_length.toString());
+				margs = m.split('_');
+				oq = oq.concat(this.tobytearr(labelmap[margs[1]] - labelmap[margs[2]], label_length));
+
+			/*
+
+				elif m[:4] == 'SUB_':
+			            oq.append('PUSH'+str(label_length))
+			            margs = m.split('_')
+			            oq.extend(tobytearr(labelmap[margs[1]] - labelmap[margs[2]], label_length))
+			*/
+
+			} else if (m.substring(0,2) == '0x') {
 
 				// Ok, that's hex. 
 				// Ok, what's our target (omit 0x)
@@ -496,15 +530,6 @@ module.exports = function() {
 
 				oq = oq.concat('PUSH' + parseInt(numbytes));
 				oq = oq.concat(this.hexStringToByteArray(hextarget));
-
-
-			} else if (typeof m === 'number') {
-
-				var L = Math.max(1,this.log256(m));
-				oq = oq.concat('PUSH' + parseInt(L));
-				oq = oq.concat(this.tobytearr(m,L));
-
-
 
 			} else {
 
