@@ -207,7 +207,10 @@ module.exports = function() {
 	}
 
 
+	/** DEPRECATED.
+
 	this.fromhex = function(b) {
+		console.log("!trace fromhex in: ",b);
 		if (b.length == 0) {
 			return 0;
 		} else {
@@ -215,9 +218,14 @@ module.exports = function() {
 			var hexpos = hashstr.indexOf(b.last());
 			// !bang warning.
 			// fromhex(b[:-1])) { // that's everything but the last item.
-			return hexpos + 16 * this.fromhex(b.substring(1,b.substring.length-1));
+			var nexttarget = b.substring(1,b.length-1);
+			var nexthex = this.fromhex(nexttarget);
+			var eachhex =  hexpos + 16 * nexthex;
+			return eachhex;
 		}
 	}
+
+	*/
 
 	this.is_numberlike = function(b) {
 		if (typeof b === 'string') {
@@ -245,7 +253,14 @@ module.exports = function() {
 			return this.frombytes(b.substring(1,b.length-1));
 		
 		} else if (b.substring(0,2) == '0x') {
-			return this.fromhex(b.substring(2,b.length));
+
+			// !bang !trace !warning
+			return b;
+
+			var hexresult = this.fromhex(b.substring(2,b.length))
+			console.log("!trace hex target: ",b.substring(2,b.length));
+			console.log("!trace CONVERTING HEX: ",hexresult);
+			return hexresult;
 		
 		} else {
 			return parseInt(b);
@@ -466,7 +481,23 @@ module.exports = function() {
 
 				oq.push('PUSH4');
 				oq = oq.concat(this.tobytearr(labelmap[m.substring(4,m.length)],4));
-			
+
+			} else if (typeof m === 'string' && m.substring(0,2) == '0x') {
+
+				// Ok, that's hex. 
+				// Ok, what's our target (omit 0x)
+				var hextarget = m.substring(2,m.length);
+				// See how many bytes we have to pack.
+				var numbytes = hextarget.length / 2;
+
+				if (numbytes > 32) {
+					return new Error("Fuuuudge, only 32 byte strings allowed for now.");
+				}
+
+				oq = oq.concat('PUSH' + parseInt(numbytes));
+				oq = oq.concat(this.hexStringToByteArray(hextarget));
+
+
 			} else if (typeof m === 'number') {
 
 				var L = Math.max(1,this.log256(m));
@@ -485,6 +516,21 @@ module.exports = function() {
 
 		return oq;
 
+
+	}
+
+	this.hexStringToByteArray = function(hexstr) {
+
+		var ints = [];
+
+		for (var strpos = 0; strpos < hexstr.length; strpos += 2) {
+			// console.log("!trace str pos: ",strpos);
+			var hexpair = hexstr.substring(strpos,strpos+2);
+			// console.log("!each hex pair: ",hexpair);
+			ints.push(parseInt(hexpair,16));
+		}
+
+		return ints;
 
 	}
 	

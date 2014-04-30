@@ -537,12 +537,16 @@ module.exports = function() {
 
 			}
 
+			// console.log("!trace hexpack: ",hexpack);
+
 			// Join it into a hex string.
 			hexpack = hexpack.join("");
 			hexpack = "0x" + hexpack;
 			
+			intoken = hexpack;
+
 			// Now, convert that to an INT, but as a string, haha.
-			intoken = parseInt(hexpack).toString();
+			// intoken = parseInt(hexpack).toString();
 			
 		} else {
 
