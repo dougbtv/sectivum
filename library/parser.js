@@ -213,7 +213,7 @@ module.exports = function() {
 					// console.log("!trace single line result: ",out);
 
 					// Include the child block into the parsed expression
-					block_statements = ['if', 'else', 'while', 'else if','def'];
+					block_statements = ['if', 'else', 'while', 'else if', 'def', 'init', 'code'];
 
 					// Our child block comes at the end of the current sequence.
 					// So see if we're at the end of the sequence, and we're at a child block-able expression.
@@ -273,6 +273,23 @@ module.exports = function() {
 
 						u.push(['else',out[1]]);
 						// u.push([out[1]]);
+
+					} else if (out[0] == 'code') {
+
+						if (output.length > 0 && output[output.length-1][0] == 'init') {
+							output[output.length-1].append(out[1]);
+						
+						} else {
+							output.push(['init', ['seq'], out[1]]);
+
+						}
+
+					/*
+
+						 elif out[0] == 'code':
+							
+
+					*/
 
 					} else {
 						// Normal case: just add the parsed line to the output
@@ -929,8 +946,8 @@ module.exports = function() {
 	    } else if (tokens.length >= 1 && tokens[0] == 'elif') {
 	        return [ 'else if', this.shuntingYard(tokens.slice(1,tokens.length)) ];
 
-	    } else if (tokens.length == 1 && tokens[0] == 'else') {
-	        return [ 'else' ];
+	    } else if (tokens.length == 1 && ['else','code','init'].contains(tokens[0])) {
+	        return [tokens[0]];
 
 	    } else if (tokens[0] == "return") {
 	        return [ 'return', this.shuntingYard(tokens.slice(1,tokens.length)) ]
