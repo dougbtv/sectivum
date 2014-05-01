@@ -13,7 +13,7 @@ You can give it a try @ https://sectivum.io/
 
 Just hit the "compile" tab, and you'll have options to compile from there, without having to install the whole application.
 
-As of this update, it's PoC-4 compatible.
+As of this update, it's PoC-4/Poc-4.5 compatible (and almost ready for PoC5)
 
 ----
 
@@ -121,9 +121,12 @@ As you can see, you can set a constant, so you can clean up some magic numbers f
 
 **Coming soon**
 
+- PoC5 compatibility
 - Better defining of functions (broken right now, but it's ready)
 - Creating richer data structures using contract storage
 - Better docs for the web app features.
+- For loops
+- Better output from the parser when you've got a mistake in your code.
 
 ----
 
