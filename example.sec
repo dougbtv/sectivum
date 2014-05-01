@@ -1,5 +1,8 @@
-$foo = "1234567890";
-contract.storage[100] = $foo;
+$a = 10;
+$b = 20;
+if ($a > $b) {
+    stop;
+}
 ======================
 $a = 10;
 contract.storage[$a] = $a;

@@ -317,18 +317,18 @@ module.exports = function() {
 		} else if (ast[0] == 'set') {
 			if (ast[1][0] == 'access') {
 				if (ast[1][1] == 'contract.storage') {
-					return ['sstore', this.preReWrite(ast[1][2]), this.preReWrite(ast[2])];
+					return ['sstore', this.rewrite(ast[1][2]), this.rewrite(ast[2])];
 				} else {
-					return ['arrset', this.preReWrite(ast[1][1]), this.preReWrite(ast[1][2]), this.preReWrite(ast[2])];
+					return ['arrset', this.rewrite(ast[1][1]), this.rewrite(ast[1][2]), this.rewrite(ast[2])];
 				}
 			}
 
 		} else if (ast[0] == 'access') {
 			if (ast[1] == 'msg.data') {
-				return ['calldataload', this.preReWrite(ast[2])];
+				return ['calldataload', this.rewrite(ast[2])];
 
 			} else if (ast[1] == 'contract.storage') {
-				return ['sload', this.preReWrite(ast[2])];
+				return ['sload', this.rewrite(ast[2])];
 
 			}
 
@@ -336,22 +336,22 @@ module.exports = function() {
 			var o = ['array', (ast.length-1).toString()]
 			for (var astidx = 1; astidx < ast.length; astidx++) {
 				var a = ast[astidx];
-				o = ['set_and_inc', this.preReWrite(a), o];
+				o = ['set_and_inc', this.rewrite(a), o];
 			}
 			return ['-', o, ((ast.length-1)*32).toString()];
 
 		} else if (ast[0] == 'return') {
 			if (ast.length == 2 && ast[1][0] == 'array_lit') {
-				return ['return', this.preReWrite(ast[1]), (ast[1].length() - 1).toString()];
+				return ['return', this.rewrite(ast[1]), (ast[1].length() - 1).toString()];
 			}
 		}
 
 		// Apply function to every item of iterable, and return list.
-		// return map(this.preReWrite, ast);
+		// return map(this.rewrite, ast);
 
 		var returner = [];
 		for (var mapidx = 0; mapidx < ast.length; mapidx++) {
-			returner.push(this.preReWrite(ast[mapidx]));
+			returner.push(this.rewrite(ast[mapidx]));
 		}
 		return returner;
 		
@@ -359,13 +359,16 @@ module.exports = function() {
 
 	this.compile_to_assembly = function(astinbound) {
 
-		var rewritten = this.rewrite(astinbound);
+		var rewritten = this.preReWrite(astinbound);
 		// console.log("!trace REWRITTEN: %j",rewritten);
 
 		var aevm = this.compile_expr(rewritten);
-		// console.log("!trace BEFORE DEREF: %j",aevm);
+		// console.log("!trace AFTER COMPILE: %j",aevm);
 
-		var dereffed = this.dereference(aevm);
+		var wrappedup = this.add_wrappers(aevm);
+		// console.log("!trace AFTER WRAPPER: %j",wrappedup);
+
+		var dereffed = this.dereference(wrappedup);
 		// console.log("!trace AFTER DEREF: %j",dereffed);
 
 		// Create our code hex.
@@ -429,30 +432,9 @@ module.exports = function() {
 
 	}
 
-	/*
-	
-		def serialize(source):
-	    print "!trace serialized source: ",source,"\n\n"
-	    def numberize(arg):
-	        if isinstance(arg, (int, long)):
-	            return arg
-	        elif arg in reverse_opcodes:
-	            return reverse_opcodes[arg]
-	        elif arg[:4] == 'PUSH':
-	            return 95 + int(arg[4:])
-	        elif re.match('^[0-9]*$', arg):
-	            return int(arg)
-	        else:
-	            raise Exception("Cannot serialize: " + str(arg))
-	    numbered = map(numberize, source)
-	    print "!trace numbered: ", numbered,"\n\n"
-	    return ''.join(map(chr, numbered))
-
-	*/
-
 	this.dereference = function(compiled) {
 
-		var label_length = this.log256(c.length*4);
+		var label_length = this.log256(compiled.length*4);
 
 		var iq = compiled.clone();
 		var mq = [];
@@ -500,7 +482,7 @@ module.exports = function() {
 			} else if (m.substring(0,4) == 'REF_') {
 
 				oq.push('PUSH' + label_length.toString());
-				oq = oq.concat(this.tobytearr(labelmap[m.substring(4,m.length)],4));
+				oq = oq.concat(this.tobytearr(labelmap[m.substring(4,m.length)],label_length));
 
 			} else if (m.substring(0,4) == 'SUB_') {
 
@@ -543,6 +525,18 @@ module.exports = function() {
 
 
 	}
+
+	// Stuff to add once to each program
+	// !banger
+	this.add_wrappers = function(c) {
+		if (this.varhash.hashlength() && c.contains('MSIZE')) { //len(varhash) and 'MSIZE' in c:
+			return [0, this.varhash.hashlength() * 32 - 1, 'MSTORE8'].concat(c);
+		} else {
+			return c;
+		}
+
+	}
+
 
 	this.hexStringToByteArray = function(hexstr) {
 
@@ -770,6 +764,48 @@ module.exports = function() {
 			this.labelcollection[0] += 2;
 
 			return [ beglab ].concat(f , [ 'NOT', endref, 'JUMP' ] , g , [ begref, 'JUMP', endlab ] );
+
+		} else if (ast[0] == 'init') {
+
+			if (ast.length == 3) {
+
+				var beglab = 'LABEL_' + this.labelcollection[0];
+				var begref = 'REF_' + this.labelcollection[0];
+
+				var endlab = 'LABEL_' + (this.labelcollection[0]+1);
+				var endref = 'REF_' + (this.labelcollection[0]+1);
+
+				var lenref = 'SUB_' + (this.labelcollection[0]+1).toString() + '_' + (this.labelcollection[0]).toString();
+
+				this.labelcollection[0] += 2;
+
+				var initcollect = [endref, 'JUMP', beglab];
+				initcollect = initcollect.concat(this.compile_expr(ast[2]));
+				initcollect = initcollect.concat([endlab, lenref, 'MSIZE', lenref, 'MSIZE', begref, 'CALLDATACOPY', 'RETURN']);
+				return initcollect;
+
+			} else {
+
+
+			}
+
+
+
+		/*
+
+		    # Init blocks
+		    elif ast[0] == 'init':
+		        if len(ast) == 3:
+		            beglab, begref = 'LABEL_' + str(lc[0]), 'REF_' + str(lc[0])
+		            endlab, endref = 'LABEL_' + str(lc[0]+1), 'REF_' + str(lc[0]+1)
+		            lenref = 'SUB_' + str(lc[0]+1) + '_'+str(lc[0])
+		            lc[0] += 2
+		            return [endref, 'JUMP', beglab] + compile_expr(ast[2], varhash, lc) + \
+		                   [endlab, lenref, 'MSIZE', lenref, 'MSIZE', begref, 'CALLDATACOPY', 'RETURN']
+		        else:
+		            return compile_expr(ast[1], varhash, lc)
+
+		*/
 
 		}  else if (ast[0] == 'seq') {
 
