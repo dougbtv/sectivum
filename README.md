@@ -9,7 +9,7 @@ A Perl-inspired language for writing Ethereum contracts. With a hint of inspirat
 
 **Try It Out!**
 
-You can give it a try @ https://sectivum.io/
+You can give it a try @ http://sectivum.io/
 
 Just hit the "compile" tab, and you'll have options to compile from there, without having to install the whole application.
 
